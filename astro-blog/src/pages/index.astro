@@ -1,0 +1,56 @@
+---
+// index.astro - 首页（文章列表页）
+// Requirements: 1.3, 2.1, 2.2, 2.3, 2.5
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import { filterPublished, sortByDateDesc, extractExcerpt } from "../utils/posts";
+
+// 获取所有文章，过滤草稿，按日期降序排序
+const allPosts = await getCollection("posts");
+const posts = sortByDateDesc(filterPublished(allPosts));
+---
+
+<BaseLayout title="我的博客" description="一个使用 Astro 构建的个人博客，分享编程、技术与生活的思考">
+  <section class="hero">
+    <h1>欢迎来到我的博客 👋</h1>
+    <p class="hero-desc">这里记录关于编程、技术和生活的思考。希望这些文字能给你带来一些启发。</p>
+  </section>
+
+  <section class="posts-list">
+    {posts.map((post) => (
+      <ArticleCard
+        title={post.data.title}
+        date={post.data.date}
+        slug={post.data.slug}
+        excerpt={extractExcerpt(post.body ?? "")}
+      />
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    max-width: 600px;
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+</style>

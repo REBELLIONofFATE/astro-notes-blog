@@ -1,0 +1,70 @@
+---
+// BaseLayout.astro - 基础页面布局
+// Requirements: 8.1, 8.2, 8.3, 9.3
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "一个使用 Astro 构建的个人博客" } = Astro.props;
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+
+    <!-- RSS 自动发现 -->
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="我的博客 RSS"
+      href="/rss.xml"
+    />
+
+    <!-- 主题初始化脚本（防止 FOUC） -->
+    <script is:inline>
+      (function () {
+        var theme;
+        try {
+          theme = localStorage.getItem("theme");
+        } catch (e) {}
+        if (theme !== "dark" && theme !== "light") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <Navbar />
+    <main class="container main-content">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .main-content {
+    min-height: calc(100vh - 64px - 120px);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+</style>
