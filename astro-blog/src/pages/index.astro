@@ -83,8 +83,19 @@ const posts = sortByDateDesc(filterPublished(allPosts));
     pointer-events: none;
   }
 
+  /* 半透明遮罩层，层级在背景之上、文字之下 */
+  .hero-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .hero {
     position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
