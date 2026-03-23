@@ -14,10 +14,7 @@ const { transparent = false } = Astro.props;
   <div class="container navbar-inner">
     <div class="navbar-left">
       <a href="/" class="site-logo" aria-label="首页">
-        <svg class="logo-icon" width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-          <rect width="36" height="36" rx="9" fill="#1b9e8c"/>
-          <polyline points="8,11 13,25 18,14 23,25 28,11" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <span class="logo-text">Rebellion</span>
       </a>
       <button class="menu-btn" aria-label="菜单">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -97,17 +94,55 @@ const { transparent = false } = Astro.props;
     text-decoration: none;
   }
 
-  .logo-icon {
-    display: block;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    overflow: hidden;
+  .logo-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    font-family: "Caveat", cursive;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    letter-spacing: 0.01em;
+    transition: color 0.2s ease;
+  }
+
+  .logo-word {
+    position: relative;
+  }
+
+  .logo-deco {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 -1px;
+    position: relative;
+    top: -2px;
+    color: var(--color-accent);
+    transition: transform 0.3s ease, color 0.2s ease;
+  }
+
+  .site-logo:hover .logo-deco {
+    transform: rotate(15deg) scale(1.15);
+  }
+
+  .navbar--transparent .logo-text {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .navbar--transparent .logo-deco {
+    color: #f4845f;
   }
 
   .site-logo:hover {
     text-decoration: none;
     opacity: 1;
+  }
+
+  .site-logo:hover .logo-text {
+    color: var(--color-accent);
+  }
+
+  .navbar--transparent .site-logo:hover .logo-text {
+    color: #fff;
   }
 
   .menu-btn {
