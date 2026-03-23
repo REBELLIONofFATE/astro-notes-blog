@@ -23,6 +23,10 @@ const posts = sortByDateDesc(filterPublished(allPosts));
     <meta property="og:description" content="一个使用 Astro 构建的个人博客，分享编程、技术与生活的思考" />
     <meta property="og:type" content="website" />
     <link rel="alternate" type="application/rss+xml" title="我的博客 RSS" href="/rss.xml" />
+    <!-- Google Fonts: 思源宋体 + 霞鹜文楷 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=LXGW+WenKai:wght@400&display=swap" rel="stylesheet" />
     <script is:inline>
       (function () {
         var theme;
@@ -41,7 +45,7 @@ const posts = sortByDateDesc(filterPublished(allPosts));
       <section class="hero">
         <span class="hero-badge">v1.0</span>
         <h1 class="hero-title">我的博客</h1>
-        <p class="hero-desc">记录编程、技术与生活的思考</p>
+        <p class="hero-desc">一个程序员的自留地，写代码、聊技术、记录生活中那些值得回味的瞬间</p>
         <div class="hero-actions">
           <a href="#posts" class="hero-btn hero-btn--primary">开始阅读</a>
           <a href="/rss.xml" class="hero-btn hero-btn--outline">RSS 订阅</a>
@@ -93,6 +97,17 @@ const posts = sortByDateDesc(filterPublished(allPosts));
     z-index: 0;
   }
 
+  /* 半透明遮罩层，层级在背景之上、文字之下 */
+  .hero-wrapper::after {
+    z-index: 1;
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .hero {
     position: relative;
     z-index: 1;
@@ -118,14 +133,16 @@ const posts = sortByDateDesc(filterPublished(allPosts));
   }
 
   .hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
+    font-family: "Ma Shan Zheng", cursive;
+    font-size: 3.8rem;
+    font-weight: 900;
     color: #fff;
     margin-bottom: 0.75rem;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.02em;
   }
 
   .hero-desc {
+    font-family: "LXGW WenKai", cursive;
     font-size: 1.25rem;
     color: rgba(255, 255, 255, 0.8);
     margin-bottom: 2rem;
