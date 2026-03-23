@@ -1,0 +1,10 @@
+# IDE
+.idea/
+
+# OS
+.DS_Store
+
+# Astro
+astro-blog/node_modules/
+astro-blog/dist/
+astro-blog/.astro/
