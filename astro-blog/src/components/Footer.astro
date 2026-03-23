@@ -1,69 +1,145 @@
 ---
-// Footer.astro - 页脚组件
-// Requirements: 7.1, 7.2, 7.3
+// Footer.astro - 页脚组件，参考 Semantic UI 底部风格
 ---
 
 <footer class="footer">
-  <div class="container footer-inner">
-    <p class="copyright">&copy; {new Date().getFullYear()} 我的博客. All rights reserved.</p>
-    <div class="social-links">
-      <a href="#" aria-label="GitHub" class="social-link" target="_blank" rel="noopener noreferrer">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-        </svg>
-      </a>
+  <!-- 上半部分：白色背景三栏 -->
+  <div class="footer-columns">
+    <div class="container columns-inner">
+      <div class="col">
+        <h4>导航</h4>
+        <a href="/">首页</a>
+        <a href="/rss.xml">RSS 订阅</a>
+        <a href="#">归档</a>
+        <a href="#">标签</a>
+      </div>
+      <div class="col">
+        <h4>社交</h4>
+        <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="#" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+        <a href="#" target="_blank" rel="noopener noreferrer">掘金</a>
+        <a href="#" target="_blank" rel="noopener noreferrer">知乎</a>
+      </div>
+      <div class="col col-about">
+        <h4>关于本站</h4>
+        <p>一个专注于前端开发与技术探索的个人博客。在这里分享编程心得、项目实践和学习笔记，希望能对你有所帮助。</p>
+        <p class="tech-stack">技术栈：Astro + TypeScript</p>
+      </div>
+    </div>
+  </div>
+  <!-- 下半部分：灰色背景居中 -->
+  <div class="footer-bottom">
+    <div class="container bottom-inner">
+      <p>&copy; {new Date().getFullYear()} 我的博客 · 使用 <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a> 构建</p>
     </div>
   </div>
 </footer>
 
 <style>
   .footer {
-    border-top: 1px solid var(--color-border);
-    padding: 2rem 0;
     margin-top: 4rem;
-    transition: border-color 0.3s ease;
   }
 
-  .footer-inner {
+  /* 上半部分 - 三栏区域 */
+  .footer-columns {
+    background-color: var(--color-bg-card);
+    border-top: 1px solid var(--color-border);
+    padding: 3rem 0;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .columns-inner {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0;
+    max-width: var(--layout-max-width);
+    padding: 0 2rem;
+  }
+
+  .col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    text-align: center;
+    gap: 0.4rem;
+    flex: 0 0 18%;
+  }
+
+  .col-about {
+    flex: 1;
+    max-width: none;
+    margin-left: auto;
+  }
+
+  .col h4 {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .col a {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .col a:hover {
+    color: var(--color-accent);
+    opacity: 1;
+    text-decoration: none;
+  }
+
+  .col-about {
+    max-width: 280px;
+  }
+
+  .col-about p {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .tech-stack {
+    margin-top: 0.5rem !important;
+    font-size: 0.8125rem !important;
+    opacity: 0.7;
+  }
+
+  /* 下半部分 - 灰色底栏 */
+  .footer-bottom {
+    background-color: var(--color-footer-bg, #e8e8e8);
+    padding: 1.5rem 0;
+    transition: background-color 0.3s ease;
+  }
+
+  .bottom-inner {
     text-align: center;
   }
 
-  .copyright {
+  .bottom-inner p {
     color: var(--color-text-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 0;
+    font-size: 0.8125rem;
+    margin: 0;
   }
 
-  .social-links {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  .social-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+  .bottom-inner a {
     color: var(--color-text-secondary);
-    transition: color 0.2s ease, background-color 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
-  .social-link:hover {
+  .bottom-inner a:hover {
     color: var(--color-accent);
-    background-color: var(--color-border);
-    text-decoration: none;
-    opacity: 1;
+  }
+
+  @media (max-width: 600px) {
+    .columns-inner {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
   }
 </style>
