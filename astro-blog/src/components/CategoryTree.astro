@@ -1,0 +1,123 @@
+---
+import type { CategoryNode } from '../utils/categories';
+
+interface Props {
+  nodes: CategoryNode[];
+  currentPath?: string;
+  depth?: number;
+}
+
+const { nodes, currentPath = '', depth = 0 } = Astro.props;
+---
+
+{nodes.map((node) => {
+  const isActive = currentPath === node.path || currentPath.startsWith(node.path + '/');
+  const hasChildren = node.children.length > 0;
+
+  return hasChildren ? (
+    <details open={isActive}>
+      <summary class:list={['cat-item', 'cat-item--parent', { active: isActive }]}>
+        <span class="cat-icon">📁</span>
+        <a href={`/categories/${node.path}`} class="cat-link" onclick="event.stopPropagation()">
+          {node.name}
+        </a>
+        <span class="cat-count">{node.count}</span>
+      </summary>
+      <div class="cat-children">
+        <Astro.self nodes={node.children} currentPath={currentPath} depth={depth + 1} />
+      </div>
+    </details>
+  ) : (
+    <div class:list={['cat-item', { active: isActive }]}>
+      <span class="cat-icon">📄</span>
+      <a href={`/categories/${node.path}`} class="cat-link">{node.name}</a>
+      <span class="cat-count">{node.count}</span>
+    </div>
+  );
+})}
+
+<style>
+  details {
+    margin: 0;
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    transition: background-color 0.15s;
+  }
+
+  .cat-item:hover,
+  summary.cat-item:hover {
+    background-color: var(--color-code-bg);
+  }
+
+  .cat-item.active,
+  summary.cat-item.active {
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .cat-item.active .cat-link,
+  summary.cat-item.active .cat-link {
+    color: #fff;
+  }
+
+  .cat-item.active .cat-count,
+  summary.cat-item.active .cat-count {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  .cat-icon {
+    font-size: 0.85em;
+    flex-shrink: 0;
+  }
+
+  .cat-link {
+    flex: 1;
+    color: var(--color-text);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cat-link:hover {
+    color: var(--color-accent);
+    text-decoration: none;
+    opacity: 1;
+  }
+
+  .cat-count {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    background-color: var(--color-border);
+    color: var(--color-text-secondary);
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    line-height: 1.5;
+  }
+
+  .cat-children {
+    padding-left: 1.1rem;
+    border-left: 1px solid var(--color-border);
+    margin-left: 0.85rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0.1rem;
+  }
+</style>

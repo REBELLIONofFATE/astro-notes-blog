@@ -3,6 +3,7 @@ title: Astro 静态站点生成入门指南
 slug: astro-guide
 date: 2026-02-10
 draft: false
+type: featured
 ---
 
 Astro 是一个专为内容驱动网站设计的 Web 框架。本文将介绍 Astro 的核心概念和基本用法。

@@ -1,0 +1,218 @@
+---
+import CategoryTree from './CategoryTree.astro';
+import type { CategoryNode } from '../utils/categories';
+
+interface Props {
+  tree: CategoryNode[];
+  currentPath?: string;
+  totalNotes?: number;
+}
+
+const { tree, currentPath = '', totalNotes = 0 } = Astro.props;
+---
+
+<!-- 移动端切换按钮 -->
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="展开/收起分类目录">
+  ☰ 分类目录
+</button>
+
+<!-- 遮罩层（移动端） -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- 侧边栏主体 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-title">分类目录</span>
+    <span class="sidebar-total">{totalNotes} 篇</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="关闭">✕</button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a
+      href="/notes"
+      class:list={['all-notes-link', { active: currentPath === '' }]}
+    >
+      📚 全部笔记
+      <span class="cat-count">{totalNotes}</span>
+    </a>
+    <div class="tree-wrapper">
+      <CategoryTree nodes={tree} currentPath={currentPath} />
+    </div>
+  </nav>
+</aside>
+
+<script>
+  const toggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const closeBtn = document.getElementById('sidebarClose');
+
+  function open() {
+    sidebar?.classList.add('open');
+    overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  toggle?.addEventListener('click', open);
+  closeBtn?.addEventListener('click', close);
+  overlay?.addEventListener('click', close);
+</script>
+
+<style>
+  .sidebar-toggle {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-card-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem 0.75rem;
+    height: fit-content;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sidebar-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex: 1;
+  }
+
+  .sidebar-total {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+
+  .sidebar-close {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .all-notes-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+    transition: background-color 0.15s;
+  }
+
+  .all-notes-link:hover {
+    background-color: var(--color-code-bg);
+    text-decoration: none;
+    opacity: 1;
+  }
+
+  .all-notes-link.active {
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .all-notes-link .cat-count {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    background-color: var(--color-border);
+    color: var(--color-text-secondary);
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    line-height: 1.5;
+    margin-left: auto;
+  }
+
+  .all-notes-link.active .cat-count {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  .tree-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  /* 移动端 */
+  @media (max-width: 768px) {
+    .sidebar-toggle {
+      display: flex;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 280px;
+      height: 100vh;
+      max-height: 100vh;
+      border-radius: 0;
+      z-index: 100;
+      transition: left 0.25s ease;
+      padding: 1.25rem 1rem;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar-close {
+      display: block;
+    }
+  }
+</style>

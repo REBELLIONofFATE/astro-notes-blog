@@ -36,24 +36,29 @@ const { title, description = "一个使用 Astro 构建的个人博客" } = Astr
       href="/rss.xml"
     />
 
+    <!-- highlight.js 主题（笔记代码高亮，随 data-theme 联动） -->
+    <link rel="stylesheet" id="hljs-theme" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css" />
+
     <!-- Logo 字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
 
-    <!-- 主题初始化脚本（防止 FOUC） -->
+    <!-- 主题初始化脚本（防止 FOUC，同步 highlight.js 主题） -->
     <script is:inline>
       (function () {
+        var HLJS_LIGHT = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css';
+        var HLJS_DARK  = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css';
+
         var theme;
-        try {
-          theme = localStorage.getItem("theme");
-        } catch (e) {}
+        try { theme = localStorage.getItem("theme"); } catch (e) {}
         if (theme !== "dark" && theme !== "light") {
-          theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         }
         document.documentElement.setAttribute("data-theme", theme);
+
+        var hljsLink = document.getElementById("hljs-theme");
+        if (hljsLink) hljsLink.href = theme === "dark" ? HLJS_DARK : HLJS_LIGHT;
       })();
     </script>
   </head>

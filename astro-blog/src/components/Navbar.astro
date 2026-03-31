@@ -16,14 +16,10 @@ const { transparent = false } = Astro.props;
       <a href="/" class="site-logo" aria-label="首页">
         <span class="logo-text">Rebellion</span>
       </a>
-      <button class="menu-btn" aria-label="菜单">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-        <span>菜单</span>
-      </button>
+      <nav class="nav-links">
+        <a href="/notes" class="nav-link">笔记</a>
+        <a href="/categories" class="nav-link">分类</a>
+      </nav>
     </div>
     <div class="navbar-right">
       <ThemeToggle />
@@ -145,26 +141,36 @@ const { transparent = false } = Astro.props;
     color: #fff;
   }
 
-  .menu-btn {
+  .nav-links {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
     padding: 0.4rem 0.75rem;
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text);
-    background: transparent;
-    cursor: pointer;
+    text-decoration: none;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  .menu-btn:hover {
+  .nav-link:hover {
     background-color: var(--color-border);
+    color: var(--color-accent);
+    text-decoration: none;
+    opacity: 1;
   }
 
-  .menu-btn svg {
-    display: block;
+  .navbar--transparent .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .navbar--transparent .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
   }
 
   .navbar-right {

@@ -7,6 +7,9 @@ export interface Post {
     slug: string;
     date: Date;
     draft?: boolean;
+    type?: 'featured' | 'note';
+    tags?: string[];
+    category?: string;
   };
   body?: string;
 }
@@ -16,35 +19,64 @@ export function filterPublished<T extends { data: { draft?: boolean } }>(posts: 
   return posts.filter((post) => post.data.draft !== true);
 }
 
+/** 仅保留 type === 'featured' 的精选文章 */
+export function filterFeatured<T extends { data: { type?: string } }>(posts: T[]): T[] {
+  return posts.filter((post) => post.data.type === 'featured');
+}
+
 /** 按日期降序排序 */
 export function sortByDateDesc<T extends { data: { date: Date } }>(posts: T[]): T[] {
   return [...posts].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
+/** 过滤指定分类（含子分类）下的文章 */
+export function filterByCategory<T extends { data: { category?: string } }>(
+  posts: T[],
+  categoryPath: string
+): T[] {
+  return posts.filter((post) => {
+    const cat = post.data.category ?? '未分类';
+    return cat === categoryPath || cat.startsWith(categoryPath + '/');
+  });
+}
+
+/** 过滤含指定标签的文章 */
+export function filterByTag<T extends { data: { tags?: string[] } }>(
+  posts: T[],
+  tag: string
+): T[] {
+  return posts.filter((post) => (post.data.tags ?? []).includes(tag));
+}
+
 /** 从 Markdown body 提取纯文本摘要（去除 Markdown 标记，截取前 maxLength 字符） */
 export function extractExcerpt(body: string, maxLength = 120): string {
   const plain = body
-    .replace(/^---[\s\S]*?---\s*/m, "")   // 去除 frontmatter
-    .replace(/```[\s\S]*?```/g, "")        // 去除代码块
-    .replace(/`[^`]*`/g, "")               // 去除行内代码
-    .replace(/!\[.*?\]\(.*?\)/g, "")       // 去除图片
-    .replace(/\[([^\]]*)\]\(.*?\)/g, "$1") // 链接保留文字
-    .replace(/#{1,6}\s+/g, "")             // 去除标题标记
-    .replace(/[*_~]{1,3}/g, "")            // 去除加粗/斜体/删除线
-    .replace(/>\s+/g, "")                  // 去除引用标记
-    .replace(/[-*+]\s+/g, "")              // 去除无序列表标记
-    .replace(/\d+\.\s+/g, "")             // 去除有序列表标记
-    .replace(/\|.*?\|/g, "")               // 去除表格
-    .replace(/\n{2,}/g, " ")               // 多换行变空格
-    .replace(/\n/g, " ")                   // 换行变空格
-    .replace(/\s+/g, " ")                  // 合并空格
+    .replace(/^---[\s\S]*?---\s*/m, '')   // 去除 frontmatter
+    .replace(/```[\s\S]*?```/g, '')        // 去除代码块
+    .replace(/`[^`]*`/g, '')               // 去除行内代码
+    .replace(/!\[.*?\]\(.*?\)/g, '')       // 去除图片
+    .replace(/\[([^\]]*)\]\(.*?\)/g, '$1') // 链接保留文字
+    .replace(/#{1,6}\s+/g, '')             // 去除标题标记
+    .replace(/[*_~]{1,3}/g, '')            // 去除加粗/斜体/删除线
+    .replace(/>\s+/g, '')                  // 去除引用标记
+    .replace(/[-*+]\s+/g, '')              // 去除无序列表标记
+    .replace(/\d+\.\s+/g, '')             // 去除有序列表标记
+    .replace(/\|.*?\|/g, '')               // 去除表格
+    .replace(/\n{2,}/g, ' ')               // 多换行变空格
+    .replace(/\n/g, ' ')                   // 换行变空格
+    .replace(/\s+/g, ' ')                  // 合并空格
     .trim();
 
   if (plain.length <= maxLength) return plain;
-  return plain.slice(0, maxLength) + "…";
+  return plain.slice(0, maxLength) + '…';
 }
 
-/** 生成文章 URL 路径 */
+/** 生成博文 URL 路径 */
 export function getPostUrl(slug: string): string {
   return `/posts/${slug}`;
+}
+
+/** 生成笔记 URL 路径 */
+export function getNoteUrl(slug: string): string {
+  return `/notes/${slug}`;
 }

@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+import TwoColumnLayout from '../../layouts/TwoColumnLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { filterPublished, sortByDateDesc, extractExcerpt, getNoteUrl } from '../../utils/posts';
+import { buildCategoryTree } from '../../utils/categories';
+
+const allNotes = await getCollection('notes');
+const published = sortByDateDesc(filterPublished(allNotes));
+const tree = buildCategoryTree(allNotes);
+
+const PAGE_SIZE = 15;
+const notes = published.slice(0, PAGE_SIZE);
+const hasMore = published.length > PAGE_SIZE;
+---
+
+<TwoColumnLayout
+  title="全部笔记"
+  description="技术笔记归档，涵盖 Java、Spring、Redis、Docker 等主题"
+  tree={tree}
+  currentCategoryPath=""
+  totalNotes={published.length}
+>
+  <div class="notes-header">
+    <h1 class="page-title">全部笔记</h1>
+    <p class="page-desc">共 {published.length} 篇，按更新时间排序</p>
+  </div>
+
+  <div class="notes-list">
+    {notes.map((note) => (
+      <ArticleCard
+        title={note.data.title}
+        date={note.data.date}
+        slug={note.data.slug}
+        excerpt={extractExcerpt(note.body ?? '')}
+        url={getNoteUrl(note.data.slug)}
+        category={note.data.category}
+        tags={note.data.tags}
+      />
+    ))}
+  </div>
+
+  {hasMore && (
+    <div class="load-more-hint">
+      <p>显示最新 {PAGE_SIZE} 篇，<a href="/categories">按分类浏览全部</a></p>
+    </div>
+  )}
+</TwoColumnLayout>
+
+<style>
+  .notes-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .load-more-hint {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .load-more-hint a {
+    color: var(--color-accent);
+  }
+</style>

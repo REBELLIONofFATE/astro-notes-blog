@@ -1,0 +1,136 @@
+---
+import { getCollection } from 'astro:content';
+import TwoColumnLayout from '../../layouts/TwoColumnLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import {
+  filterPublished,
+  sortByDateDesc,
+  filterByCategory,
+  extractExcerpt,
+  getNoteUrl,
+} from '../../utils/posts';
+import { buildCategoryTree, getAllCategories } from '../../utils/categories';
+
+export async function getStaticPaths() {
+  const allNotes = await getCollection('notes');
+  const categories = getAllCategories(allNotes);
+
+  return categories.map(({ path }) => ({
+    params: { path },
+  }));
+}
+
+const { path: categoryPath } = Astro.params;
+
+const allNotes = await getCollection('notes');
+const published = filterPublished(allNotes);
+const categoryNotes = sortByDateDesc(filterByCategory(published, categoryPath));
+const tree = buildCategoryTree(allNotes);
+
+const shortName = categoryPath.split('/').at(-1) ?? categoryPath;
+---
+
+<TwoColumnLayout
+  title={`${shortName} - 分类笔记`}
+  description={`${shortName} 分类下的全部笔记，共 ${categoryNotes.length} 篇`}
+  tree={tree}
+  currentCategoryPath={categoryPath}
+  totalNotes={published.length}
+>
+  <div class="category-header">
+    <div class="breadcrumb">
+      <a href="/notes">全部笔记</a>
+      {categoryPath.split('/').map((seg, i, arr) => {
+        const subPath = arr.slice(0, i + 1).join('/');
+        return (
+          <>
+            <span class="breadcrumb-sep">›</span>
+            {i === arr.length - 1 ? (
+              <span class="breadcrumb-current">{seg}</span>
+            ) : (
+              <a href={`/categories/${subPath}`}>{seg}</a>
+            )}
+          </>
+        );
+      })}
+    </div>
+    <h1 class="page-title">📁 {shortName}</h1>
+    <p class="page-desc">共 {categoryNotes.length} 篇笔记</p>
+  </div>
+
+  {categoryNotes.length === 0 ? (
+    <p class="empty-tip">该分类下暂无笔记</p>
+  ) : (
+    <div class="notes-list">
+      {categoryNotes.map((note) => (
+        <ArticleCard
+          title={note.data.title}
+          date={note.data.date}
+          slug={note.data.slug}
+          excerpt={extractExcerpt(note.body ?? '')}
+          url={getNoteUrl(note.data.slug)}
+          category={note.data.category}
+          tags={note.data.tags}
+        />
+      ))}
+    </div>
+  )}
+</TwoColumnLayout>
+
+<style>
+  .category-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+    opacity: 1;
+  }
+
+  .breadcrumb-sep {
+    color: var(--color-border);
+  }
+
+  .breadcrumb-current {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .empty-tip {
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    padding: 2rem 0;
+    text-align: center;
+  }
+</style>

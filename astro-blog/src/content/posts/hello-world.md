@@ -3,6 +3,7 @@ title: 你好，世界
 slug: hello-world
 date: 2026-01-15
 draft: false
+type: featured
 ---
 
 这是我的第一篇博客文章，欢迎来到我的个人博客！在这里，我将分享关于编程、技术和生活的思考。

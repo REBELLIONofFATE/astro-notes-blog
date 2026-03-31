@@ -6,19 +6,35 @@ interface Props {
   date: Date;
   slug: string;
   excerpt: string;
+  /** 自定义 URL，默认为 /posts/{slug} */
+  url?: string;
+  category?: string;
+  tags?: string[];
 }
 
-const { title, date, slug, excerpt } = Astro.props;
+const { title, date, slug, excerpt, url, category, tags } = Astro.props;
 
 const formattedDate = date.toISOString().slice(0, 10);
-const postUrl = `/posts/${slug}`;
+const postUrl = url ?? `/posts/${slug}`;
 ---
 
 <article class="card article-card">
   <a href={postUrl} class="card-link">
     <h2 class="card-title">{title}</h2>
-    <time class="card-date" datetime={formattedDate}>{formattedDate}</time>
+    <div class="card-meta">
+      <time class="card-date" datetime={formattedDate}>{formattedDate}</time>
+      {category && category !== '未分类' && (
+        <span class="card-category">📁 {category.split('/').at(-1)}</span>
+      )}
+    </div>
     <p class="card-excerpt">{excerpt}</p>
+    {tags && tags.length > 0 && (
+      <div class="card-tags">
+        {tags.slice(0, 3).map((tag) => (
+          <span class="card-tag">#{tag}</span>
+        ))}
+      </div>
+    )}
     <span class="read-more">阅读更多 →</span>
   </a>
 </article>
@@ -43,29 +59,58 @@ const postUrl = `/posts/${slug}`;
   }
 
   .card-title {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: var(--color-text);
     transition: color 0.2s ease;
+    line-height: 1.4;
   }
 
   .article-card:hover .card-title {
     color: var(--color-accent);
   }
 
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .card-date {
-    display: block;
     font-size: 0.85rem;
     color: var(--color-text-secondary);
-    margin-bottom: 0.75rem;
+  }
+
+  .card-category {
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    opacity: 0.85;
   }
 
   .card-excerpt {
     font-size: 0.95rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-tag {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    background-color: var(--color-code-bg);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
   }
 
   .read-more {

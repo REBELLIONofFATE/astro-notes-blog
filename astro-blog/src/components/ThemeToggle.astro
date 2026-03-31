@@ -98,6 +98,9 @@
       : "light";
   }
 
+  const HLJS_LIGHT = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css';
+  const HLJS_DARK  = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css';
+
   function setTheme(theme: string) {
     document.documentElement.setAttribute("data-theme", theme);
     try {
@@ -105,6 +108,8 @@
     } catch {
       // localStorage 不可用，忽略
     }
+    const hljsLink = document.getElementById("hljs-theme") as HTMLLinkElement | null;
+    if (hljsLink) hljsLink.href = theme === "dark" ? HLJS_DARK : HLJS_LIGHT;
   }
 
   btn?.addEventListener("click", () => {

@@ -1,0 +1,122 @@
+---
+import { getCollection } from 'astro:content';
+import TwoColumnLayout from '../../layouts/TwoColumnLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import {
+  filterPublished,
+  sortByDateDesc,
+  filterByTag,
+  extractExcerpt,
+  getNoteUrl,
+} from '../../utils/posts';
+import { buildCategoryTree, getAllTags } from '../../utils/categories';
+
+export async function getStaticPaths() {
+  const allNotes = await getCollection('notes');
+  const tags = getAllTags(allNotes);
+
+  return tags.map(({ tag }) => ({
+    params: { tag },
+  }));
+}
+
+const { tag } = Astro.params;
+
+const allNotes = await getCollection('notes');
+const published = filterPublished(allNotes);
+const tagNotes = sortByDateDesc(filterByTag(published, tag));
+const tree = buildCategoryTree(allNotes);
+---
+
+<TwoColumnLayout
+  title={`#${tag} - 标签笔记`}
+  description={`标签 ${tag} 下的全部笔记，共 ${tagNotes.length} 篇`}
+  tree={tree}
+  currentCategoryPath=""
+  totalNotes={published.length}
+>
+  <div class="tag-header">
+    <div class="breadcrumb">
+      <a href="/notes">全部笔记</a>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">#{tag}</span>
+    </div>
+    <h1 class="page-title">🏷 #{tag}</h1>
+    <p class="page-desc">共 {tagNotes.length} 篇笔记</p>
+  </div>
+
+  {tagNotes.length === 0 ? (
+    <p class="empty-tip">该标签下暂无笔记</p>
+  ) : (
+    <div class="notes-list">
+      {tagNotes.map((note) => (
+        <ArticleCard
+          title={note.data.title}
+          date={note.data.date}
+          slug={note.data.slug}
+          excerpt={extractExcerpt(note.body ?? '')}
+          url={getNoteUrl(note.data.slug)}
+          category={note.data.category}
+          tags={note.data.tags}
+        />
+      ))}
+    </div>
+  )}
+</TwoColumnLayout>
+
+<style>
+  .tag-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.75rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+    opacity: 1;
+  }
+
+  .breadcrumb-sep {
+    color: var(--color-border);
+  }
+
+  .breadcrumb-current {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .empty-tip {
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    padding: 2rem 0;
+    text-align: center;
+  }
+</style>
