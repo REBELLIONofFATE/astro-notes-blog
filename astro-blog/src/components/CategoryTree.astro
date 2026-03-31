@@ -17,11 +17,23 @@ const { nodes, currentPath = '', depth = 0 } = Astro.props;
   return hasChildren ? (
     <details open={isActive}>
       <summary class:list={['cat-item', 'cat-item--parent', { active: isActive }]}>
-        <span class="cat-icon">📁</span>
+        {/* 文件夹关闭状态 */}
+        <svg class="cat-icon icon-folder-closed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        {/* 文件夹展开状态 */}
+        <svg class="cat-icon icon-folder-open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h9a2 2 0 0 1 2 2v1"/>
+          <path d="M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2z"/>
+        </svg>
         <a href={`/categories/${node.path}`} class="cat-link" onclick="event.stopPropagation()">
           {node.name}
         </a>
         <span class="cat-count">{node.count}</span>
+        {/* 展开/收起指示箭头 */}
+        <svg class="cat-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
       </summary>
       <div class="cat-children">
         <Astro.self nodes={node.children} currentPath={currentPath} depth={depth + 1} />
@@ -29,7 +41,10 @@ const { nodes, currentPath = '', depth = 0 } = Astro.props;
     </details>
   ) : (
     <div class:list={['cat-item', { active: isActive }]}>
-      <span class="cat-icon">📄</span>
+      <svg class="cat-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
       <a href={`/categories/${node.path}`} class="cat-link">{node.name}</a>
       <span class="cat-count">{node.count}</span>
     </div>
@@ -84,8 +99,40 @@ const { nodes, currentPath = '', depth = 0 } = Astro.props;
   }
 
   .cat-icon {
-    font-size: 0.85em;
     flex-shrink: 0;
+    color: var(--color-text-secondary);
+    transition: color 0.15s;
+  }
+
+  .cat-item:hover .cat-icon,
+  summary.cat-item:hover .cat-icon {
+    color: var(--color-accent);
+  }
+
+  .cat-item.active .cat-icon,
+  summary.cat-item.active .cat-icon {
+    color: #fff;
+  }
+
+  /* 文件夹开/关状态切换 */
+  .icon-folder-open { display: none; }
+  details[open] .icon-folder-closed { display: none; }
+  details[open] .icon-folder-open { display: inline-block; }
+
+  /* 展开箭头旋转 */
+  .cat-chevron {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    transition: transform 0.2s ease, color 0.15s;
+    margin-left: auto;
+  }
+
+  details[open] > summary .cat-chevron {
+    transform: rotate(90deg);
+  }
+
+  summary.cat-item.active .cat-chevron {
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .cat-link {
