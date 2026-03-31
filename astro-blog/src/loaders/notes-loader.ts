@@ -3,29 +3,64 @@ import { readFileSync, statSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, basename, extname } from 'node:path';
 import { execSync } from 'node:child_process';
-import { marked, Renderer } from 'marked';
+import { Marked, Renderer } from 'marked';
+import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
 
-// 自定义 Renderer：代码块使用 highlight.js 高亮
-const renderer = new Renderer();
-renderer.code = ({ text, lang }) => {
-  let highlighted: string;
-  let detectedLang = lang ?? '';
-  try {
-    if (lang && hljs.getLanguage(lang)) {
-      highlighted = hljs.highlight(text, { language: lang }).value;
-    } else {
-      const result = hljs.highlightAuto(text);
-      highlighted = result.value;
-      detectedLang = result.language ?? '';
-    }
-  } catch {
-    highlighted = text;
+// Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
+let _highlighter: Highlighter | null = null;
+
+async function getHighlighter(): Promise<Highlighter> {
+  if (!_highlighter) {
+    _highlighter = await createHighlighter({
+      themes: ['github-dark'],
+      langs: Object.keys(bundledLanguages),
+    });
   }
-  const langClass = detectedLang ? ` class="language-${detectedLang}"` : '';
-  return `<pre class="hljs-pre"><code${langClass}>${highlighted}</code></pre>\n`;
+  return _highlighter;
+}
+
+// highlight.js 语言名 → Shiki 语言名的别名映射
+const LANG_ALIAS: Record<string, string> = {
+  shell: 'bash',
+  sh: 'bash',
+  zsh: 'bash',
+  js: 'javascript',
+  ts: 'typescript',
+  py: 'python',
+  rb: 'ruby',
+  rs: 'rust',
+  md: 'markdown',
+  yml: 'yaml',
 };
-marked.use({ renderer });
+
+function resolveLang(hl: Highlighter, lang: string): string {
+  const normalized = LANG_ALIAS[lang] ?? lang;
+  return hl.getLoadedLanguages().includes(normalized as never) ? normalized : 'text';
+}
+
+function buildMarked(hl: Highlighter): Marked {
+  const renderer = new Renderer();
+  renderer.code = ({ text, lang }) => {
+    let resolvedLang: string;
+
+    if (lang) {
+      // 有标签：别名修正后交给 Shiki
+      resolvedLang = resolveLang(hl, lang);
+    } else {
+      // 无标签：用 highlight.js 自动检测语言，再交给 Shiki 渲染
+      const detected = hljs.highlightAuto(text);
+      resolvedLang = detected.language ? resolveLang(hl, detected.language) : 'text';
+    }
+
+    try {
+      return hl.codeToHtml(text, { lang: resolvedLang, theme: 'github-dark' });
+    } catch {
+      return `<pre><code>${text}</code></pre>`;
+    }
+  };
+  return new Marked({ renderer });
+}
 
 export interface NotesLoaderOptions {
   /** 笔记仓库根目录的绝对路径 */
@@ -44,6 +79,9 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
       const mdFiles = await collectMdFiles(basePath, excludeDirs);
       logger.info(`notes-loader: 发现 ${mdFiles.length} 篇笔记（路径：${basePath}）`);
+
+      const hl = await getHighlighter();
+      const md = buildMarked(hl);
 
       let loaded = 0;
       let skipped = 0;
@@ -74,7 +112,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           const draft = (frontmatter['draft'] as boolean | undefined) ?? false;
           const type = (frontmatter['type'] as string | undefined) ?? 'note';
 
-          const html = await marked.parse(body);
+          const html = await md.parse(body);
 
           store.set({
             id: slug,
