@@ -13,7 +13,7 @@ const posts = defineCollection({
  * 笔记集合：从外部笔记仓库自动同步
  * 本地开发路径通过 NOTES_PATH 环境变量配置，fallback 到硬编码路径
  */
-const NOTES_PATH = process.env['NOTES_PATH'] ?? 'D:\\MyProject\\my-note\\myNote';
+const NOTES_PATH = process.env['NOTES_PATH'] ?? '/Users/wuyuxiang/Desktop/myNote/myNote';
 
 const notes = defineCollection({
   loader: notesLoader({
