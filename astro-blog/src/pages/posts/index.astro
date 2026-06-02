@@ -12,7 +12,6 @@ const published = sortByDateDesc(filterPublished(allPosts));
   title="博文"
   description="手动撰写的博客文章"
 >
-  <div data-pagefind-ignore>
   <div class="posts-header">
     <h1 class="page-title">博文</h1>
     <p class="page-desc">共 {published.length} 篇</p>
@@ -37,7 +36,6 @@ const published = sortByDateDesc(filterPublished(allPosts));
       <p>暂无博文，敬请期待。</p>
     </div>
   )}
-  </div>
 </BaseLayout>
 
 <style>
