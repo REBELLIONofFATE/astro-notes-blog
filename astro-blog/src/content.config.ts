@@ -1,17 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
-import { z } from 'astro/zod';
 import { notesLoader } from './loaders/notes-loader';
-
-const contentSchema = z.object({
-  title: z.string(),
-  slug: z.string(),
-  date: z.coerce.date(),
-  draft: z.boolean().default(false),
-  type: z.enum(['featured', 'note']).default('featured'),
-  tags: z.array(z.string()).default([]),
-  category: z.string().default('未分类'),
-});
+import { contentSchema } from './frontmatter-schema';
 
 /** 精选博文集合：手动维护，存放在 src/content/posts/ */
 const posts = defineCollection({
@@ -31,7 +21,8 @@ const notes = defineCollection({
     excludeDirs: ['.git', '.idea', '文档'],
   }),
   schema: contentSchema.extend({
-    type: z.enum(['featured', 'note']).default('note'),
+    // 笔记默认 type 为 'note'
+    type: contentSchema.shape.type.default('note'),
   }),
 });
 
