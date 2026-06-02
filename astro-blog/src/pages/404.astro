@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="404 - 页面未找到"
+  description="抱歉，您访问的页面不存在"
+>
+  <div class="not-found">
+    <h1 class="nf-code">404</h1>
+    <p class="nf-desc">页面迷路了，但探索可以继续</p>
+    <div class="nf-actions">
+      <a href="/" class="nf-btn nf-btn--primary">返回首页</a>
+      <a href="/notes" class="nf-btn nf-btn--outline">浏览笔记</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 60vh;
+    padding: 2rem;
+  }
+
+  .nf-code {
+    font-family: Lato, "Helvetica Neue", Arial, sans-serif;
+    font-size: 6rem;
+    font-weight: 900;
+    color: var(--color-text);
+    margin: 0;
+    line-height: 1;
+    opacity: 0.15;
+  }
+
+  .nf-desc {
+    font-size: 1.1rem;
+    color: var(--color-text-secondary);
+    margin: 1rem 0 2rem;
+  }
+
+  .nf-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nf-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.65rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .nf-btn:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .nf-btn--primary {
+    background-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .nf-btn--primary:hover {
+    opacity: 0.9;
+  }
+
+  .nf-btn--outline {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .nf-btn--outline:hover {
+    background-color: var(--color-bg-card);
+  }
+</style>
