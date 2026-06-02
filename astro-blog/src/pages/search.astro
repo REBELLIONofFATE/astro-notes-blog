@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="搜索"
+  description="搜索所有笔记和博文"
+>
+  <div class="search-page">
+    <h1 class="page-title">搜索</h1>
+    <p class="page-desc">搜索所有笔记和博文</p>
+    <div id="search"></div>
+  </div>
+</BaseLayout>
+
+<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+<script src="/pagefind/pagefind-ui.js" is:inline></script>
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', () => {
+    new PagefindUI({ element: "#search", showImages: false });
+    const input = document.querySelector("#search input");
+    if (input) input.focus();
+  });
+</script>
+
+<style>
+  .search-page {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+  }
+
+  #search {
+    --pagefind-ui-primary: var(--color-accent);
+    --pagefind-ui-text: var(--color-text);
+    --pagefind-ui-background: var(--color-bg);
+    --pagefind-ui-border: var(--color-border);
+    --pagefind-ui-border-radius: 8px;
+    --pagefind-ui-scale: 1;
+  }
+</style>

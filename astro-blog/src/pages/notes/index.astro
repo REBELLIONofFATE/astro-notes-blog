@@ -21,6 +21,7 @@ const hasMore = published.length > PAGE_SIZE;
   currentCategoryPath=""
   totalNotes={published.length}
 >
+  <div data-pagefind-ignore>
   <div class="notes-header">
     <h1 class="page-title">全部笔记</h1>
     <p class="page-desc">共 {published.length} 篇，按更新时间排序</p>
@@ -45,6 +46,7 @@ const hasMore = published.length > PAGE_SIZE;
       <p>显示最新 {PAGE_SIZE} 篇，<a href="/categories">按分类浏览全部</a></p>
     </div>
   )}
+  </div>
 </TwoColumnLayout>
 
 <style>

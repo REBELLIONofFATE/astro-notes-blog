@@ -18,10 +18,16 @@ const { transparent = false } = Astro.props;
       </a>
       <nav class="nav-links">
         <a href="/notes" class="nav-link">笔记</a>
-        <a href="/categories" class="nav-link">分类</a>
+        <a href="/posts" class="nav-link">博文</a>
       </nav>
     </div>
     <div class="navbar-right">
+      <a href="/search" class="nav-action" aria-label="搜索">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </a>
       <ThemeToggle />
       <a href="/rss.xml" class="nav-action" aria-label="RSS 订阅" target="_blank" rel="noopener noreferrer">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

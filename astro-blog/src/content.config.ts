@@ -3,7 +3,7 @@ import { glob } from 'astro/loaders';
 import { notesLoader } from './loaders/notes-loader';
 import { contentSchema } from './frontmatter-schema';
 
-/** 精选博文集合：手动维护，存放在 src/content/posts/ */
+/** 博文集合：手动维护，存放在 src/content/posts/ */
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: contentSchema,

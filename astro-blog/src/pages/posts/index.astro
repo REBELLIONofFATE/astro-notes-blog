@@ -1,0 +1,70 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { filterPublished, sortByDateDesc, extractExcerpt, getPostUrl } from '../../utils/posts';
+
+const allPosts = await getCollection('posts');
+const published = sortByDateDesc(filterPublished(allPosts));
+---
+
+<BaseLayout
+  title="博文"
+  description="手动撰写的博客文章"
+>
+  <div data-pagefind-ignore>
+  <div class="posts-header">
+    <h1 class="page-title">博文</h1>
+    <p class="page-desc">共 {published.length} 篇</p>
+  </div>
+
+  {published.length > 0 ? (
+    <div class="posts-list">
+      {published.map((post) => (
+        <ArticleCard
+          title={post.data.title}
+          date={post.data.date}
+          slug={post.data.slug}
+          excerpt={extractExcerpt(post.body ?? '')}
+          url={getPostUrl(post.data.slug)}
+          category={post.data.category}
+          tags={post.data.tags}
+        />
+      ))}
+    </div>
+  ) : (
+    <div class="posts-empty">
+      <p>暂无博文，敬请期待。</p>
+    </div>
+  )}
+  </div>
+</BaseLayout>
+
+<style>
+  .posts-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .posts-empty {
+    text-align: center;
+    padding: 3rem 0;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+  }
+</style>
