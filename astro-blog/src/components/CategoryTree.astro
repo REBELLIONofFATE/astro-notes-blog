@@ -41,9 +41,12 @@ const { nodes, currentPath = '', depth = 0 } = Astro.props;
     </details>
   ) : (
     <div class:list={['cat-item', { active: isActive }]}>
-      <svg class="cat-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      <svg class="cat-icon icon-folder-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+      <svg class="cat-icon icon-folder-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h9a2 2 0 0 1 2 2v1"/>
+        <path d="M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2z"/>
       </svg>
       <a href={`/categories/${node.path}`} class="cat-link">{node.name}</a>
       <span class="cat-count">{node.count}</span>
@@ -116,8 +119,12 @@ const { nodes, currentPath = '', depth = 0 } = Astro.props;
 
   /* 文件夹开/关状态切换 */
   .icon-folder-open { display: none; }
-  details[open] .icon-folder-closed { display: none; }
-  details[open] .icon-folder-open { display: inline-block; }
+  /* 父节点：跟随 details 展开/折叠状态 */
+  details[open] > summary .icon-folder-closed { display: none; }
+  details[open] > summary .icon-folder-open { display: inline-block; }
+  /* 叶子节点：跟随 active 选中状态 */
+  .cat-item:not(.cat-item--parent).active .icon-folder-closed { display: none; }
+  .cat-item:not(.cat-item--parent).active .icon-folder-open { display: inline-block; }
 
   /* 展开箭头旋转 */
   .cat-chevron {

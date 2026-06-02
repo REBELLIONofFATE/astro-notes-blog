@@ -81,18 +81,40 @@ export function buildCategoryTree(posts: PostLike[]): CategoryNode[] {
 
 /**
  * 获取所有分类的扁平列表（去重，按文章数降序）
+ * 包含中间节点路径（即使没有笔记直接归属该路径）
  */
 export function getAllCategories(posts: PostLike[]): { path: string; count: number }[] {
-  const count: Record<string, number> = {};
+  const directCount: Record<string, number> = {};
   const published = posts.filter((p) => p.data.draft !== true);
 
   for (const post of published) {
     const cat = post.data.category ?? '未分类';
-    count[cat] = (count[cat] ?? 0) + 1;
+    directCount[cat] = (directCount[cat] ?? 0) + 1;
   }
 
-  return Object.entries(count)
-    .map(([path, count]) => ({ path, count }))
+  // 收集所有出现过的分类路径（含中间节点）
+  const allPaths = new Set<string>();
+  for (const cat of Object.keys(directCount)) {
+    const parts = cat.split('/');
+    for (let i = 1; i <= parts.length; i++) {
+      allPaths.add(parts.slice(0, i).join('/'));
+    }
+  }
+
+  // 计算每个路径的总文章数（含子分类）
+  function totalForPath(path: string): number {
+    let total = directCount[path] ?? 0;
+    for (const [cat, cnt] of Object.entries(directCount)) {
+      if (cat !== path && cat.startsWith(path + '/')) {
+        total += cnt;
+      }
+    }
+    return total;
+  }
+
+  return Array.from(allPaths)
+    .map((path) => ({ path, count: totalForPath(path) }))
+    .filter(({ count }) => count > 0)
     .sort((a, b) => b.count - a.count);
 }
 
