@@ -68,12 +68,164 @@ const { title, description = "一个使用 Astro 构建的个人博客" } = Astr
       <slot />
     </main>
     <Footer />
+
+    <!-- 全屏阅读按钮 -->
+    <button class="fullscreen-toggle" id="fullscreenToggle" aria-label="全屏阅读" title="全屏阅读 (F)">
+      <svg class="icon-enter" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"/>
+        <polyline points="9 21 3 21 3 15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>
+      <svg class="icon-exit" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 8 4 4 8 4"/>
+        <polyline points="20 16 20 20 16 20"/>
+        <line x1="4" y1="4" x2="10" y2="10"/>
+        <line x1="20" y1="20" x2="14" y2="14"/>
+      </svg>
+    </button>
+
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('fullscreenToggle');
+        var html = document.documentElement;
+        var body = document.body;
+
+        // 滚动后显示全屏按钮
+        var scrolled = false;
+        function onScroll() {
+          if (!scrolled && window.scrollY > 300) {
+            scrolled = true;
+            body.classList.add('has-scrolled');
+          }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+
+        function enter() {
+          html.setAttribute('data-fullscreen', '');
+          if (html.requestFullscreen) {
+            html.requestFullscreen().catch(function () {});
+          }
+        }
+
+        function exit() {
+          html.removeAttribute('data-fullscreen');
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(function () {});
+          }
+        }
+
+        function toggle() {
+          html.hasAttribute('data-fullscreen') ? exit() : enter();
+        }
+
+        btn.addEventListener('click', toggle);
+
+        // 键盘快捷键 F
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && e.target === document.body) {
+            e.preventDefault();
+            toggle();
+          }
+        });
+
+        // 监听浏览器原生退出全屏（Esc）
+        document.addEventListener('fullscreenchange', function () {
+          if (!document.fullscreenElement) {
+            html.removeAttribute('data-fullscreen');
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
 
 <style>
   .main-content {
     min-height: calc(100vh - 64px - 120px);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  /* 全屏阅读按钮 */
+  .fullscreen-toggle {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease, background-color 0.3s ease,
+      border-color 0.3s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px var(--color-shadow);
+  }
+
+  .fullscreen-toggle:hover {
+    opacity: 1 !important;
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    box-shadow: 0 4px 12px var(--color-shadow);
+  }
+
+  .fullscreen-toggle .icon-exit {
+    display: none;
+  }
+
+  /* 页面滚动一定距离后显示按钮 */
+  @media (min-width: 769px) {
+    body.has-scrolled .fullscreen-toggle {
+      opacity: 0.6;
+      transform: translateY(0);
+    }
+  }
+
+  /* 全屏状态 */
+  html[data-fullscreen] .fullscreen-toggle {
+    opacity: 0.6;
+    transform: translateY(0);
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(128, 128, 128, 0.15);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  html[data-fullscreen] .fullscreen-toggle:hover {
+    background: rgba(128, 128, 128, 0.25);
+  }
+
+  html[data-fullscreen] .fullscreen-toggle .icon-enter {
+    display: none;
+  }
+
+  html[data-fullscreen] .fullscreen-toggle .icon-exit {
+    display: block;
+  }
+
+  /* 全屏时隐藏导航栏和页脚 */
+  html[data-fullscreen] .navbar {
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  html[data-fullscreen] .footer {
+    display: none;
+  }
+
+  /* 全屏时内容区域扩展 */
+  html[data-fullscreen] .main-content {
+    min-height: 100vh;
     padding-top: 2rem;
     padding-bottom: 2rem;
   }
