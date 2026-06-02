@@ -65,6 +65,7 @@ const postUrl = url ?? `/posts/${slug}`;
     color: var(--color-text);
     transition: color 0.2s ease;
     line-height: 1.4;
+    overflow-wrap: break-word;
   }
 
   .article-card:hover .card-title {
@@ -95,6 +96,8 @@ const postUrl = url ?? `/posts/${slug}`;
     color: var(--color-text-secondary);
     line-height: 1.6;
     margin-bottom: 0.75rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .card-tags {
