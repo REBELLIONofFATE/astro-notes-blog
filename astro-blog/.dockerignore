@@ -1,0 +1,7 @@
+node_modules/
+.astro/
+.git/
+.gitignore
+.env
+.env.local
+notes/

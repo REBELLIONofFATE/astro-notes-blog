@@ -1,0 +1,20 @@
+# ============================================
+# Rebellion's Blog — Docker Compose 部署
+# ============================================
+#
+# 使用方式：
+#   1. 先本地执行 npm run build（确保笔记路径正确）
+#   2. 再执行 docker compose up -d
+#   3. 访问：http://localhost:8080
+#
+# 如需自定义域名，修改 astro.config.mjs 中的 site 字段后再构建
+
+version: "3.8"
+
+services:
+  blog:
+    build:
+      context: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
