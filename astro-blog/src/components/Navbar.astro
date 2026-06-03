@@ -48,19 +48,20 @@ const { transparent = false } = Astro.props;
     background-color: var(--color-bg);
     border-bottom: 1px solid var(--color-border);
     backdrop-filter: blur(8px);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease, backdrop-filter 0.5s ease;
   }
 
   /* 透明模式 - 用于 hero 页面 */
   .navbar--transparent {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 2;
+    z-index: 100;
     background: transparent;
-    border-bottom: none;
+    border-bottom: 1px solid transparent;
     backdrop-filter: none;
+    transition: background-color 0.5s ease, box-shadow 0.5s ease, backdrop-filter 0.5s ease, border-color 0.5s ease;
   }
 
   .navbar--transparent .site-logo,
@@ -81,7 +82,8 @@ const { transparent = false } = Astro.props;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 64px;
+    height: 72px;
+    transition: height 0.5s ease;
   }
 
   .navbar-left {
@@ -101,11 +103,11 @@ const { transparent = false } = Astro.props;
     align-items: center;
     gap: 0;
     font-family: "Caveat", cursive;
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--color-accent);
     letter-spacing: 0.01em;
-    transition: color 0.2s ease;
+    transition: color 0.5s ease;
   }
 
   .logo-word {
@@ -202,4 +204,68 @@ const { transparent = false } = Astro.props;
     text-decoration: none;
     opacity: 1;
   }
+
+  /* 滚动后的导航栏样式 */
+  .navbar--scrolled {
+    background-color: var(--color-bg) !important;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-bottom-color: var(--color-border);
+  }
+
+  .navbar--scrolled .navbar-inner {
+    height: 60px;
+  }
+
+  .navbar--scrolled.navbar--transparent {
+    background-color: var(--color-bg) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .navbar--scrolled.navbar--transparent .site-logo,
+  .navbar--scrolled.navbar--transparent .nav-link,
+  .navbar--scrolled.navbar--transparent .nav-action,
+  .navbar--scrolled.navbar--transparent :global(.theme-toggle) {
+    color: var(--color-text) !important;
+  }
+
+  .navbar--scrolled.navbar--transparent .nav-link:hover,
+  .navbar--scrolled.navbar--transparent .nav-action:hover,
+  .navbar--scrolled.navbar--transparent :global(.theme-toggle:hover) {
+    background-color: var(--color-border) !important;
+    color: var(--color-accent) !important;
+  }
+
+  .navbar--scrolled.navbar--transparent .logo-text {
+    color: var(--color-accent) !important;
+  }
+
+  .navbar--scrolled.navbar--transparent .logo-deco {
+    color: var(--color-accent) !important;
+  }
 </style>
+
+<script is:inline>
+  (function() {
+    // 只对透明导航栏（首页）启用滚动效果
+    var navbar = document.querySelector('.navbar--transparent');
+    if (!navbar) return;
+    
+    var scrollThreshold = 50;
+    var ticking = false;
+    
+    window.addEventListener('scroll', function() {
+      if (!ticking) {
+        window.requestAnimationFrame(function() {
+          if (window.scrollY > scrollThreshold) {
+            navbar.classList.add('navbar--scrolled');
+          } else {
+            navbar.classList.remove('navbar--scrolled');
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  })();
+</script>

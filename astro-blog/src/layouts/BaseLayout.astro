@@ -64,6 +64,7 @@ const { title, description = "一个使用 Astro 构建的个人博客" } = Astr
   </head>
   <body>
     <Navbar />
+    <div class="nav-spacer"></div>
     <main class="container main-content">
       <slot />
     </main>
@@ -142,6 +143,10 @@ const { title, description = "一个使用 Astro 构建的个人博客" } = Astr
 </html>
 
 <style>
+  .nav-spacer {
+    height: 72px;
+  }
+
   .main-content {
     min-height: calc(100vh - 64px - 120px);
     padding-top: 2rem;

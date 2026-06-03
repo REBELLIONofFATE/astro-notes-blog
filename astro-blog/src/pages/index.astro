@@ -59,9 +59,11 @@ function getItemUrl(item: { data: { slug: string; type?: string } }): string {
     </script>
   </head>
   <body>
-    <!-- Hero 区域（含透明导航栏） -->
+    <!-- 全局导航栏 -->
+    <Navbar transparent={true} />
+
+    <!-- Hero 区域 -->
     <div class="hero-wrapper">
-      <Navbar transparent={true} />
       <section class="hero">
         <h1 class="hero-title">Rebellion's Blog</h1>
         <p class="hero-desc">一个程序员的自留地，写代码、聊技术、记录生活中那些值得回味的瞬间</p>
@@ -71,6 +73,9 @@ function getItemUrl(item: { data: { slug: string; type?: string } }): string {
         </div>
       </section>
     </div>
+
+    <!-- 占位符，防止内容被固定导航栏遮挡 -->
+    <div class="hero-spacer"></div>
 
     <!-- 内容列表 -->
     <main class="container main-content" id="posts">
@@ -105,6 +110,11 @@ function getItemUrl(item: { data: { slug: string; type?: string } }): string {
     position: relative;
     background: url('/wallhaven-95z1q1.jpg') center/cover no-repeat;
     overflow: hidden;
+  }
+
+  /* 占位符，高度与导航栏初始高度相同 */
+  .hero-spacer {
+    height: 72px;
   }
 
   .hero-wrapper::before {
