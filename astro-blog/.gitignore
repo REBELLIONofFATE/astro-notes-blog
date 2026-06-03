@@ -6,3 +6,6 @@ dist/
 # 环境变量（本地覆盖）
 .env
 .env.local
+
+# 笔记资源文件（运行时自动从外部笔记仓库同步）
+public/notes-assets/

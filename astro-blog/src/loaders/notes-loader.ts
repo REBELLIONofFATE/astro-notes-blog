@@ -6,6 +6,7 @@ import { execSync } from 'node:child_process';
 import { Marked, Renderer } from 'marked';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
+import { createAssetSyncState, syncAndReplaceAssets, type AssetStrategyName } from './note-assets';
 
 // Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
 let _highlighter: Highlighter | null = null;
@@ -67,10 +68,12 @@ export interface NotesLoaderOptions {
   basePath: string;
   /** 需要排除的目录名（精确匹配），默认排除 .git、.idea、文档 */
   excludeDirs?: string[];
+  /** 资源处理策略，默认 'auto'（启用全部策略） */
+  assetStrategies?: AssetStrategyName;
 }
 
 export function notesLoader(options: NotesLoaderOptions): Loader {
-  const { basePath, excludeDirs = ['.git', '.idea', '文档'] } = options;
+  const { basePath, excludeDirs = ['.git', '.idea', '文档'], assetStrategies = 'auto' } = options;
 
   return {
     name: 'notes-loader',
@@ -85,6 +88,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
       let loaded = 0;
       let skipped = 0;
+      const assetState = createAssetSyncState();
 
       for (const filePath of mdFiles) {
         try {
@@ -119,7 +123,10 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
           const type = (frontmatter['type'] as string | undefined) ?? 'note';
 
-          const html = await md.parse(body);
+          let html = await md.parse(body);
+
+          // 同步资源文件并替换 HTML 中的图片路径
+          html = syncAndReplaceAssets(filePath, category, html, assetState, undefined, assetStrategies);
 
           store.set({
             id: slug,
