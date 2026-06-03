@@ -1,6 +1,105 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#2185d0"/>
-  <path d="M10 9 Q16 5 22 9 L16 27 Z" fill="#fff"/>
-  <line x1="16" y1="27" x2="16" y2="18" stroke="#2185d0" stroke-width="1.2" stroke-linecap="round"/>
-  <circle cx="16" cy="16.5" r="1.5" fill="#2185d0"/>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+
+      <stop offset="0%" stop-color="#6EE7F9"/>
+
+      <stop offset="50%" stop-color="#3B82F6"/>
+
+      <stop offset="100%" stop-color="#4338CA"/>
+
+    </linearGradient>
+
+
+
+    <linearGradient id="whiteGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+
+      <stop offset="0%" stop-color="#FFFFFF"/>
+
+      <stop offset="100%" stop-color="#F1F5F9"/>
+
+    </linearGradient>
+
+  </defs>
+
+
+
+  <!-- 更大幅度放大 + 轻微压扁 + 居中 -->
+
+  <g transform="
+
+    translate(64 64)
+
+    scale(1.45 0.85)
+
+    translate(-64 -64)
+
+  ">
+
+
+
+    <!-- 左侧 -->
+
+    <path
+
+      d="
+
+      M28 24
+
+      C28 19 32 17 36 20
+
+      L56 32
+
+      C60 34 62 38 62 43
+
+      V98
+
+      C62 103 59 106 55 103
+
+      L35 91
+
+      C31 89 28 85 28 80
+
+      Z"
+
+      fill="url(#whiteGradient)"
+
+    />
+
+
+
+    <!-- 右侧 -->
+
+    <path
+
+      d="
+
+      M100 24
+
+      C100 19 96 17 92 20
+
+      L72 32
+
+      C68 34 66 38 66 43
+
+      V98
+
+      C66 103 69 106 73 103
+
+      L93 91
+
+      C97 89 100 85 100 80
+
+      Z"
+
+      fill="url(#blueGradient)"
+
+    />
+
+
+
+  </g>
+
 </svg>
