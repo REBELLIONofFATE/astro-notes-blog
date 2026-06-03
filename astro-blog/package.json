@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && npx pagefind --site dist --glob \"{notes/**,posts/**}\"",
+    "build": "astro build && node scripts/pagefind-build.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest --run"
