@@ -110,6 +110,13 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
 
           const draft = (frontmatter['draft'] as boolean | undefined) ?? false;
+
+          // draft 文章直接跳过，不上 store，避免生成页面路由
+          if (draft) {
+            skipped++;
+            continue;
+          }
+
           const type = (frontmatter['type'] as string | undefined) ?? 'note';
 
           const html = await md.parse(body);
@@ -145,6 +152,11 @@ async function collectMdFiles(dir: string, excludeDirs: string[]): Promise<strin
     try {
       entries = await readdir(currentDir, { withFileTypes: true });
     } catch {
+      return;
+    }
+
+    // 检查 .buildignore 标记文件：存在则跳过整个目录
+    if (entries.some((e) => e.isFile() && e.name === '.buildignore')) {
       return;
     }
 
