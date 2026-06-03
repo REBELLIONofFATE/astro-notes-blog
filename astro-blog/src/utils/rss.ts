@@ -13,6 +13,7 @@ export interface RssPost {
     title: string;
     slug: string;
     date: Date;
+    type?: string;
   };
   body?: string;
 }
@@ -22,9 +23,11 @@ export function generateRssItem(
   post: RssPost,
   extractExcerpt: (body: string) => string
 ): RssItem {
+  const slug = post.data.slug;
+  const link = post.data.type === 'note' ? `/notes/${slug}` : `/posts/${slug}`;
   return {
     title: post.data.title,
-    link: `/posts/${post.data.slug}`,
+    link,
     pubDate: post.data.date,
     description: extractExcerpt(post.body ?? ""),
   };

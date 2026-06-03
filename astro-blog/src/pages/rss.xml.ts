@@ -7,13 +7,19 @@ import { filterPublished, sortByDateDesc, extractExcerpt } from "../utils/posts"
 import { generateRssItem } from "../utils/rss";
 
 export async function GET(context: APIContext) {
-  const allPosts = await getCollection("posts");
-  const posts = sortByDateDesc(filterPublished(allPosts));
+  const [allPosts, allNotes] = await Promise.all([
+    getCollection("posts"),
+    getCollection("notes"),
+  ]);
+
+  const allContent = sortByDateDesc(
+    filterPublished([...allPosts, ...allNotes])
+  );
 
   return rss({
     title: "我的博客",
-    description: "一个使用 Astro 构建的个人博客",
+    description: "一个使用 Astro 构建的个人博客，分享编程、技术与生活的思考",
     site: context.site!.toString(),
-    items: posts.map((post) => generateRssItem(post, extractExcerpt)),
+    items: allContent.map((item) => generateRssItem(item, extractExcerpt)),
   });
 }
