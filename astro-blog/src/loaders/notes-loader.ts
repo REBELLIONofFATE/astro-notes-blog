@@ -64,14 +64,23 @@ function buildMarked(hl: Highlighter): Marked {
 }
 
 export interface NotesLoaderOptions {
-  /** 笔记仓库根目录的绝对路径 */
-  basePath: string;
+  /** 笔记仓库根目录的绝对路径。不设置时跳过笔记加载 */
+  basePath?: string;
   /** 需要排除的目录名（精确匹配），默认排除 .git、.idea、文档 */
   excludeDirs?: string[];
 }
 
 export function notesLoader(options: NotesLoaderOptions): Loader {
   const { basePath, excludeDirs = ['.git', '.idea', '文档'] } = options;
+
+  if (!basePath) {
+    return {
+      name: 'notes-loader',
+      async load({ store }) {
+        store.clear();
+      },
+    };
+  }
 
   return {
     name: 'notes-loader',
