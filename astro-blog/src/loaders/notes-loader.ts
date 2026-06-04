@@ -1,12 +1,12 @@
 import type { Loader } from 'astro/loaders';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, rmSync, statSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join, relative, basename, extname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { Marked, Renderer } from 'marked';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
-import { createAssetSyncState, syncAndReplaceAssets, type AssetStrategyName } from './note-assets';
+import { createAssetCopyState, loadBuildIgnore, syncAndReplaceAssets } from './asset-copier';
 
 // Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
 let _highlighter: Highlighter | null = null;
@@ -68,19 +68,22 @@ export interface NotesLoaderOptions {
   basePath: string;
   /** 需要排除的目录名（精确匹配），默认排除 .git、.idea、文档 */
   excludeDirs?: string[];
-  /** 资源处理策略，默认 'auto'（启用全部策略） */
-  assetStrategies?: AssetStrategyName;
 }
 
 export function notesLoader(options: NotesLoaderOptions): Loader {
-  const { basePath, excludeDirs = ['.git', '.idea', '文档'], assetStrategies = 'auto' } = options;
+  const { basePath, excludeDirs = ['.git', '.idea', '文档'] } = options;
 
   return {
     name: 'notes-loader',
     async load({ store, logger }) {
       store.clear();
 
-      const mdFiles = await collectMdFiles(basePath, excludeDirs);
+      // 清理上次构建的资源产物，避免残留文件
+      const notesAssetsDir = join(process.cwd(), 'public', 'notes-assets');
+      rmSync(notesAssetsDir, { recursive: true, force: true });
+
+      const buildIgnore = loadBuildIgnore(basePath);
+      const mdFiles = await collectMdFiles(basePath, excludeDirs, buildIgnore);
       logger.info(`notes-loader: 发现 ${mdFiles.length} 篇笔记（路径：${basePath}）`);
 
       const hl = await getHighlighter();
@@ -88,7 +91,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
       let loaded = 0;
       let skipped = 0;
-      const assetState = createAssetSyncState();
+      const assetState = createAssetCopyState();
 
       for (const filePath of mdFiles) {
         try {
@@ -126,7 +129,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           let html = await md.parse(body);
 
           // 同步资源文件并替换 HTML 中的图片路径
-          html = syncAndReplaceAssets(filePath, category, html, assetState, undefined, assetStrategies);
+          html = syncAndReplaceAssets(filePath, category, html, assetState, buildIgnore, basePath);
 
           store.set({
             id: slug,
@@ -151,7 +154,11 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 }
 
 /** 递归收集目录下所有 .md 文件，自动排除隐藏目录和 excludeDirs */
-async function collectMdFiles(dir: string, excludeDirs: string[]): Promise<string[]> {
+async function collectMdFiles(
+  dir: string,
+  excludeDirs: string[],
+  buildIgnore?: ((relPath: string) => boolean) | null,
+): Promise<string[]> {
   const results: string[] = [];
 
   async function walk(currentDir: string) {
@@ -159,11 +166,6 @@ async function collectMdFiles(dir: string, excludeDirs: string[]): Promise<strin
     try {
       entries = await readdir(currentDir, { withFileTypes: true });
     } catch {
-      return;
-    }
-
-    // 检查 .buildignore 标记文件：存在则跳过整个目录
-    if (entries.some((e) => e.isFile() && e.name === '.buildignore')) {
       return;
     }
 
@@ -175,7 +177,9 @@ async function collectMdFiles(dir: string, excludeDirs: string[]): Promise<strin
       if (entry.isDirectory()) {
         await walk(fullPath);
       } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
-        results.push(fullPath);
+        if (!buildIgnore?.(relative(dir, fullPath))) {
+          results.push(fullPath);
+        }
       }
     }
   }
