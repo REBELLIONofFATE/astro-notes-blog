@@ -66,7 +66,7 @@ function collectAssets(
           results.push(...collectAssets(fullPath, baseDir, ignore, maxDepth > 0 ? maxDepth - 1 : maxDepth));
         }
       } else if (e.isFile() && !SKIP_EXTS.has(extname(e.name).toLowerCase())) {
-        const relPath = relative(baseDir, fullPath);
+        const relPath = relative(baseDir, fullPath).replace(/\\/g, '/');
         if (!ignore?.(relPath)) {
           results.push({ absPath: fullPath, relPath });
         }

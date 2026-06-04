@@ -186,7 +186,8 @@ async function collectMdFiles(
       if (entry.isDirectory()) {
         await walk(fullPath);
       } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
-        if (!buildIgnore?.(relative(dir, fullPath))) {
+        const pathToCheck = relative(dir, fullPath).replace(/\\/g, '/');
+        if (!buildIgnore?.(pathToCheck)) {
           results.push(fullPath);
         }
       }
