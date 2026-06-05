@@ -1,205 +1,291 @@
-# 实施计划：Astro 静态博客（阶段 1）
+# 资源文件关联 - 三个待办任务实施方案
 
-## 概述
+## Context
 
-基于 Astro SSG 构建静态博客系统，使用 Markdown + Frontmatter 管理内容，原生 JS 实现客户端交互，Vitest + fast-check 进行测试。任务按依赖关系排序，确保每一步都在前一步基础上递增构建。
+当前 `asset-copier.ts` 只处理 `src=` 属性替换不处理 `href=`，导致 `<a href="file.pdf">` 链接无法工作；`notes-loader.ts` 逐文件调用 `git log`（264次串行 ≈ 26s），且资源扫描是笔记处理的副作用（无 .md 目录的资源会丢失）。本方案解决这三个问题。
 
-## Tasks
+## 执行顺序
 
-- [x] 1. 初始化项目结构与基础配置
-  - [x] 1.1 创建 Astro 项目并安装依赖
-    - 初始化 Astro 项目（`npm create astro@latest`）
-    - 安装依赖：`@astrojs/sitemap`、`@astrojs/rss`、`vitest`、`fast-check`
-    - 配置 `astro.config.mjs`，集成 sitemap
-    - 配置 `tsconfig.json`
-    - 配置 `vitest.config.ts`
-    - _Requirements: 10.1, 10.2, 10.3_
+**Task 2（git log 批量）→ Task 3（资源扫描解耦 + 吸收 Task 1）**
 
-  - [x] 1.2 创建全局样式与主题变量
-    - 创建 `src/styles/global.css`
-    - 定义 CSS 自定义属性（亮色/暗色模式变量）
-    - 实现温暖色调、圆角、柔和阴影的基础样式
-    - 实现响应式布局基础断点
-    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+Task 2 完全独立，先执行。Task 3 重构 asset-copier API 形态后，Task 1 的 href 替换被新 `replaceAssetPaths` 统一正则自然覆盖。
 
-  - [x] 1.3 定义 Content Collections Schema
-    - 创建 `src/content/config.ts`
-    - 使用 Zod 定义 posts 集合的 Frontmatter schema（title、slug、date、draft）
-    - _Requirements: 1.1, 1.2_
+---
 
-  - [x] 1.4 创建示例 Markdown 文章
-    - 在 `src/content/posts/` 下创建至少 2 篇示例文章（含不同日期）
-    - 创建 1 篇草稿文章（`draft: true`）用于验证过滤逻辑
-    - _Requirements: 1.1, 1.2, 1.3_
+## Task 2：git log 改为纯批量模式
 
-- [x] 2. 实现布局与公共组件
-  - [x] 2.1 实现 BaseLayout.astro
-    - 创建 `src/layouts/BaseLayout.astro`
-    - 接收 `title` 和 `description` props
-    - 渲染完整 HTML 结构（html、head、body）
-    - 注入 SEO 元标签（title、meta description、Open Graph）
-    - 注入 RSS 自动发现标签 `<link rel="alternate" type="application/rss+xml">`
-    - 在 `<head>` 中内联主题初始化脚本（防止 FOUC）
-    - 加载全局样式
-    - 包含 Navbar 和 Footer 组件
-    - _Requirements: 8.1, 8.2, 8.3, 9.3_
+### 文件：`astro-blog/src/loaders/notes-loader.ts`
 
-  - [x] 2.2 实现 Navbar.astro
-    - 创建 `src/components/Navbar.astro`
-    - 渲染站名（链接到首页 `/`）
-    - 包含 ThemeToggle 组件
-    - 包含 RSS 图标链接
-    - 固定在页面顶部
-    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+**新增 `buildDateMap` 函数**（在 `deriveCategory` 函数之后，约第 295 行）：
 
-  - [x] 2.3 实现 ThemeToggle.astro
-    - 创建 `src/components/ThemeToggle.astro`
-    - 渲染太阳/月亮切换按钮
-    - 内联 `<script>` 处理点击事件
-    - 读写 localStorage 存储主题偏好（try-catch 容错）
-    - 切换 `<html>` 的 `data-theme` 属性
-    - 首次访问时检测 `prefers-color-scheme` 系统偏好
-    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+```typescript
+function buildDateMap(basePath: string): Map<string, Date> {
+  const map = new Map<string, Date>();
+  try {
+    const output = execSync(
+      'git log --reverse --diff-filter=A --format="%aI" --name-only',
+      { cwd: basePath, timeout: 10000, stdio: ['pipe', 'pipe', 'ignore'] }
+    ).toString();
 
-  - [x] 2.4 实现 Footer.astro
-    - 创建 `src/components/Footer.astro`
-    - 渲染版权信息（含动态年份）
-    - 渲染社交媒体图标链接（GitHub 等）
-    - _Requirements: 7.1, 7.2, 7.3_
+    let currentDate: Date | null = null;
+    for (const line of output.trim().split('\n')) {
+      if (!line) continue;
+      const d = new Date(line);
+      if (!isNaN(d.getTime())) {
+        currentDate = d;
+      } else if (currentDate) {
+        const cleanPath = line.replace(/\\/g, '/');
+        if (!map.has(cleanPath)) {
+          map.set(cleanPath, currentDate);
+        }
+      }
+    }
+  } catch { /* git 不可用时返回空 Map，fallback 到 mtime */ }
+  return map;
+}
+```
 
-  - [x] 2.5 实现 ArticleCard.astro
-    - 创建 `src/components/ArticleCard.astro`
-    - 接收 `title`、`date`、`slug`、`excerpt` props
-    - 渲染卡片容器（圆角、阴影）
-    - 展示标题、格式化日期、摘要
-    - 渲染"阅读更多"链接指向 `/posts/{slug}`
-    - _Requirements: 2.2, 2.4, 6.2, 6.3_
+**修改 `load` 函数**（在 `store.clear()` 之后、`collectMdFiles` 之前新增）：
 
-- [x] 3. 实现页面路由与数据获取
-  - [x] 3.1 实现首页 index.astro（文章列表页）
-    - 创建 `src/pages/index.astro`
-    - 使用 `getCollection('posts')` 获取所有文章
-    - 过滤 `draft !== true` 的文章
-    - 按 `date` 降序排序
-    - 实现摘要提取逻辑（从 Markdown body 提取前 120 字符纯文本）
-    - 遍历渲染 ArticleCard 组件
-    - 使用 BaseLayout 包裹
-    - _Requirements: 1.3, 2.1, 2.2, 2.3, 2.5_
+```typescript
+const dateMap = buildDateMap(basePath);
+```
 
-  - [x] 3.2 实现文章详情页 [slug].astro
-    - 创建 `src/pages/posts/[slug].astro`
-    - `getStaticPaths()` 返回所有非草稿文章的 slug
-    - 渲染文章标题和格式化日期
-    - 渲染 `<Content />` 组件
-    - 应用 prose 排版样式（行间距、段落间距、最大宽度）
-    - 代码块语法高亮（Astro 内置 Shiki）
-    - 使用 BaseLayout 包裹（传入文章标题和描述）
-    - _Requirements: 1.4, 1.5, 3.1, 3.2, 3.3, 3.4, 3.5_
+**修改日期获取逻辑**（约第 119-120 行），将：
+```typescript
+const date = rawDate ? new Date(rawDate as string) : getFileDate(filePath, basePath);
+```
+改为：
+```typescript
+const date = rawDate
+  ? new Date(rawDate as string)
+  : (dateMap.get(relPath) ?? statSync(filePath).mtime);
+```
 
-  - [x] 3.3 实现 RSS Feed 端点
-    - 创建 `src/pages/rss.xml.ts`
-    - 使用 `@astrojs/rss` 生成 RSS feed
-    - 包含所有非草稿文章的标题、链接、日期、摘要
-    - _Requirements: 9.1, 9.2_
+**删除 `getFileDate` 函数**（原第 298-316 行）。
 
-- [x] 4. 检查点 - 核心功能验证
-  - 确保项目可成功构建（`npm run build`）
-  - 确保 dist 目录包含首页、文章详情页、rss.xml、sitemap.xml
-  - 确保草稿文章未出现在构建产物中
-  - Ensure all tests pass, ask the user if questions arise.
+> 耗时从 ~26s 降至 ~1s，`--follow` 丢失可接受（重命名文件 ≤3 篇）。
 
-- [ ] 5. 提取工具函数并编写测试
-  - [x] 5.1 提取可测试的工具函数
-    - 创建 `src/utils/frontmatter.ts`：Frontmatter 解析/序列化辅助函数
-    - 创建 `src/utils/posts.ts`：文章过滤（草稿排除）、排序（日期降序）、摘要提取函数
-    - 创建 `src/utils/theme.ts`：主题切换逻辑（toggle、读写 localStorage）
-    - 创建 `src/utils/seo.ts`：SEO 元标签生成函数
-    - 创建 `src/utils/rss.ts`：RSS 条目生成辅助函数
-    - 创建 `src/utils/sitemap.ts`：Sitemap URL 生成辅助函数
-    - _Requirements: 1.2, 1.3, 2.3, 5.2, 5.3, 8.2, 8.3, 9.2, 8.4_
+---
 
-  - [x] 5.2 将页面和组件中的逻辑替换为工具函数调用
-    - 更新 `index.astro` 使用 `posts.ts` 中的过滤和排序函数
-    - 更新 `[slug].astro` 使用 slug 路由生成函数
-    - 更新 `ThemeToggle.astro` 使用 `theme.ts` 中的逻辑
-    - 更新 `BaseLayout.astro` 使用 `seo.ts` 中的元标签生成函数
-    - 更新 `rss.xml.ts` 使用 `rss.ts` 中的辅助函数
-    - _Requirements: 1.3, 2.3, 5.2, 8.2, 9.2_
+## Task 3：资源扫描独立化（吸收 Task 1 的 href 替换）
 
-  - [ ]* 5.3 编写属性测试：Frontmatter 解析往返
-    - **Property 1: Frontmatter 解析往返**
-    - 使用 fast-check 生成随机 title、slug、date、draft 值
-    - 验证序列化为 YAML 后再解析回来与原始对象等价
-    - **Validates: Requirements 1.2**
+### 文件 1：`astro-blog/src/loaders/asset-copier.ts`
 
-  - [ ]* 5.4 编写属性测试：草稿文章过滤
-    - **Property 2: 草稿文章过滤**
-    - 使用 fast-check 生成随机文章集合（混合 draft 状态）
-    - 验证过滤后仅包含 `draft !== true` 的文章，且无遗漏
-    - **Validates: Requirements 1.3, 2.1**
+**修改 import**（第 2 行），增加 `resolve`：
+```typescript
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { join, extname, dirname, relative, resolve } from 'node:path';
+```
 
-  - [ ]* 5.5 编写属性测试：文章按日期降序排列
-    - **Property 4: 文章按日期降序排列**
-    - 使用 fast-check 生成随机日期列表
-    - 验证排序后每篇文章日期 >= 后一篇文章日期
-    - **Validates: Requirements 2.3**
+**新增 `AssetInfo` 接口**（常量定义之后，约第 10 行）：
+```typescript
+export interface AssetInfo {
+  absPath: string;
+  relPath: string;
+  category: string;
+}
+```
 
-  - [ ]* 5.6 编写属性测试：文章卡片包含必要信息
-    - **Property 3: 文章卡片包含必要信息**
-    - 使用 fast-check 生成随机文章元数据
-    - 验证渲染后的卡片 HTML 包含标题、日期、摘要和正确链接
-    - **Validates: Requirements 2.2, 2.4**
+**新增 `scanAllAssets`**（全局遍历 vault，替代 `collectAssets`）：
+```typescript
+function deriveCategoryFromPath(relPath: string): string {
+  const parts = relPath.split('/');
+  if (parts.length <= 1) return '未分类';
+  return parts.slice(0, -1).join('/');
+}
 
-  - [ ]* 5.7 编写属性测试：Slug 决定 URL 路径
-    - **Property 5: Slug 决定 URL 路径**
-    - 使用 fast-check 生成随机合法 slug 字符串
-    - 验证生成的 URL 路径为 `/posts/{slug}`
-    - **Validates: Requirements 3.3, 2.4**
+export function scanAllAssets(
+  vaultRoot: string,
+  buildIgnore?: ((relPath: string) => boolean) | null,
+): AssetInfo[] {
+  const assets: AssetInfo[] = [];
+  function walk(dir: string) {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch { return; }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue;
+      const fullPath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile() && !SKIP_EXTS.has(extname(entry.name).toLowerCase())) {
+        const relPath = relative(vaultRoot, fullPath).replace(/\\/g, '/');
+        if (buildIgnore?.(relPath)) continue;
+        assets.push({ absPath: fullPath, relPath, category: deriveCategoryFromPath(relPath) });
+      }
+    }
+  }
+  walk(vaultRoot);
+  return assets;
+}
+```
 
-  - [ ]* 5.8 编写属性测试：主题切换为对合操作
-    - **Property 6: 主题切换为对合操作**
-    - 验证对任意初始主题，切换两次后恢复原状
-    - **Validates: Requirements 5.2**
+**新增 `copyAllAssets`**（按 absPath 去重复制）：
+```typescript
+export function copyAllAssets(
+  allAssets: AssetInfo[],
+  publicDir: string = join(process.cwd(), 'public'),
+): void {
+  const copied = new Set<string>();
+  for (const { absPath, relPath, category } of allAssets) {
+    if (copied.has(absPath)) continue;
+    copied.add(absPath);
+    const dest = join(publicDir, 'notes-assets', category, relPath);
+    mkdirSync(dirname(dest), { recursive: true });
+    cpSync(absPath, dest);
+  }
+}
+```
 
-  - [ ]* 5.9 编写属性测试：主题偏好持久化往返
-    - **Property 7: 主题偏好持久化往返**
-    - 模拟 localStorage，验证存储后读取一致
-    - **Validates: Requirements 5.3, 5.4**
+**新增 `replaceAssetPaths`**（统一处理 `src` 和 `href`，吸收 Task 1）：
+```typescript
+export function replaceAssetPaths(
+  html: string,
+  noteFilePath: string,
+  assetMap: Map<string, AssetInfo>,
+  vaultRoot: string,
+): string {
+  const mdDir = dirname(noteFilePath);
 
-  - [ ]* 5.10 编写属性测试：SEO 元标签完整性
-    - **Property 8: SEO 元标签完整性**
-    - 使用 fast-check 生成随机 title 和 description
-    - 验证生成的 HTML head 包含 title、meta description、OG 标签
-    - **Validates: Requirements 8.2, 8.3**
+  return html.replace(/(src|href)="([^"]*)"/g, (fullMatch, attr: string, rawPath: string) => {
+    // 跳过外部 URL、绝对路径、Data URI、锚点
+    if (/^(https?:|data:|[\/#])/.test(rawPath)) return fullMatch;
 
-  - [ ]* 5.11 编写属性测试：Sitemap 包含所有已发布页面
-    - **Property 9: Sitemap 包含所有已发布页面**
-    - 使用 fast-check 生成随机文章集合
-    - 验证 sitemap 包含所有已发布文章 URL，不包含草稿
-    - **Validates: Requirements 8.4**
+    const attempts: string[] = [rawPath];
+    if (rawPath.includes('%')) {
+      try {
+        const decoded = decodeURI(rawPath);
+        if (decoded !== rawPath) attempts.push(decoded);
+      } catch { /* 忽略无效编码 */ }
+    }
 
-  - [ ]* 5.12 编写属性测试：RSS Feed 包含所有已发布文章
-    - **Property 10: RSS Feed 包含所有已发布文章**
-    - 使用 fast-check 生成随机文章集合
-    - 验证 RSS 条目包含标题、链接、日期、摘要，数量正确
-    - **Validates: Requirements 9.2**
+    for (const attempt of attempts) {
+      const resolved = resolve(mdDir, attempt);
+      const vaultRelPath = relative(vaultRoot, resolved).replace(/\\/g, '/');
+      const asset = assetMap.get(vaultRelPath);
+      if (asset) {
+        const encoded = encodeURI(asset.relPath);
+        return `${attr}="/notes-assets/${asset.category}/${encoded}"`;
+      }
+    }
 
-  - [ ]* 5.13 编写单元测试
-    - 测试 Frontmatter 解析的具体示例和边界情况（空标题、特殊字符 slug、无效日期）
-    - 测试空文章列表的过滤和排序
-    - 测试摘要提取（含 Markdown 标记的文本、极短文本、空文本）
-    - 测试主题切换 localStorage 不可用时的降级行为
-    - _Requirements: 1.2, 1.3, 2.3, 5.2, 5.3_
+    return fullMatch;
+  });
+}
+```
 
-- [x] 6. 最终检查点 - 全面验证
-  - 确保所有测试通过（`npx vitest --run`）
-  - 确保构建成功且产物完整
-  - Ensure all tests pass, ask the user if questions arise.
+**删除**：`collectAssets`（第 53-79 行）、`syncAndReplaceAssets`（第 114-170 行）。
+**保留但标记 `@deprecated`**：`AssetCopyState`、`createAssetCopyState`。
+**保留不变**：`escapeRegExp`、`parseBuildIgnore`、`loadBuildIgnore`。
 
-## Notes
+### 文件 2：`astro-blog/src/loaders/notes-loader.ts`
 
-- 标记 `*` 的任务为可选任务，可跳过以加速 MVP 交付
-- 每个任务引用了具体的需求编号，确保可追溯性
-- 检查点任务确保增量验证，及时发现问题
-- 属性测试验证通用正确性属性，单元测试验证具体示例和边界情况
-- 工具函数提取到独立模块后，既方便页面/组件复用，也方便独立测试
+**修改 import**（第 9 行），替换为：
+```typescript
+import { loadBuildIgnore, scanAllAssets, copyAllAssets, replaceAssetPaths, type AssetInfo } from './asset-copier';
+```
+
+**修改 `load` 函数**，重写流程为三个阶段：
+
+```typescript
+async load({ store, logger }) {
+  store.clear();
+
+  const notesAssetsDir = join(process.cwd(), 'public', 'notes-assets');
+  rmSync(notesAssetsDir, { recursive: true, force: true });
+
+  const buildIgnore = loadBuildIgnore(basePath);
+  const mdFiles = await collectMdFiles(basePath, excludeDirs, buildIgnore);
+  logger.info(`notes-loader: 发现 ${mdFiles.length} 篇笔记（路径：${basePath}）`);
+
+  // === 阶段 0：批量获取 git 日期（Task 2 产物） ===
+  const dateMap = buildDateMap(basePath);
+
+  // === 阶段 1：全局资源扫描与复制 ===
+  const allAssets = scanAllAssets(basePath, buildIgnore);
+  copyAllAssets(allAssets);
+  const assetMap = new Map<string, AssetInfo>();
+  for (const a of allAssets) {
+    if (!assetMap.has(a.relPath)) {
+      assetMap.set(a.relPath, a);
+    }
+  }
+  logger.info(`notes-loader: 复制 ${allAssets.length} 个资源文件`);
+
+  // === 阶段 2：逐篇笔记处理（渲染 + 路径替换 + 入库） ===
+  const hl = await getHighlighter();
+  const md = buildMarked(hl);
+  let loaded = 0;
+  let skipped = 0;
+
+  for (const filePath of mdFiles) {
+    try {
+      const content = readFileSync(filePath, 'utf-8');
+      const relPath = relative(basePath, filePath).replace(/\\/g, '/');
+      const { frontmatter, body } = parseFrontmatter(content);
+
+      const title =
+        (frontmatter['title'] as string | undefined) ??
+        extractTitle(body) ??
+        basename(filePath, extname(filePath));
+
+      const slug = generateSlug(relPath);
+      const rawDate = frontmatter['date'];
+      const date = rawDate
+        ? new Date(rawDate as string)
+        : (dateMap.get(relPath) ?? statSync(filePath).mtime);
+
+      const category =
+        (frontmatter['category'] as string | undefined) ?? deriveCategory(relPath);
+      const rawTags = frontmatter['tags'];
+      const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
+      const draft = (frontmatter['draft'] as boolean | undefined) ?? false;
+
+      if (draft) { skipped++; continue; }
+
+      const type = (frontmatter['type'] as string | undefined) ?? 'note';
+      let html = await md.parse(body);
+      html = replaceAssetPaths(html, filePath, assetMap, basePath);
+
+      store.set({
+        id: slug,
+        data: { title, slug, date, category, tags, draft, type },
+        body,
+        rendered: { html, metadata: { headings: [], imagePaths: [], frontmatter: {} } },
+      });
+
+      loaded++;
+    } catch (err) {
+      logger.warn(`notes-loader: 跳过 ${filePath} — ${err}`);
+      skipped++;
+    }
+  }
+  logger.info(`notes-loader: 加载完成，成功 ${loaded} 篇，跳过 ${skipped} 篇`);
+},
+```
+
+**删除**：`const assetState = createAssetCopyState()`、`getFileDate` 函数。
+
+---
+
+## Task 1：href 路径替换
+
+Task 1 已被 Task 3 的 `replaceAssetPaths` 自然吸收——统一正则 `/(src|href)="([^"]*)"/g` 一次性覆盖 `src=` 和 `href=` 的所有情况（含跨目录 `../`、中文编码/未编码）。
+
+---
+
+## 验证方法
+
+```bash
+cd /Users/wuyuxiang/Myproject/my-blog/astro-blog
+npm run build
+
+# 1. 验证 git log 耗时：观察日志中 notes-loader 阶段耗时变化（~26s → ~1s）
+# 2. 验证资源文件全部被复制：ls public/notes-assets/
+# 3. 验证 href 替换：grep -r 'href="/notes-assets/' dist/
+# 4. 验证外部链接未被错误替换：grep -r 'href="https\?://' dist/
+# 5. 验证跨目录引用：在 vault 中创建 A/note.md 引用 ../B/image.png，检查构建产物
+# 6. 验证无 .md 目录的资源不丢失：在 vault 创建纯资源目录，构建后检查
+```

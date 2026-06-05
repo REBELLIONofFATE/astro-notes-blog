@@ -6,7 +6,7 @@ import { execSync } from 'node:child_process';
 import { Marked, Renderer } from 'marked';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
-import { createAssetCopyState, loadBuildIgnore, syncAndReplaceAssets } from './asset-copier';
+import { loadBuildIgnore, scanAllAssets, copyAllAssets, replaceAssetPaths, type AssetInfo } from './asset-copier';
 
 // Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
 let _highlighter: Highlighter | null = null;
@@ -95,12 +95,26 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
       const mdFiles = await collectMdFiles(basePath, excludeDirs, buildIgnore);
       logger.info(`notes-loader: 发现 ${mdFiles.length} 篇笔记（路径：${basePath}）`);
 
+      // === 阶段 0：获取 git 日期 ===
+      const dateMap = buildDateMap(basePath);
+      logger.info(`notes-loader: dateMap 包含 ${dateMap.size} 个文件的 git 日期`);
+
+      // === 阶段 1：全局资源扫描与复制 ===
+      const allAssets = scanAllAssets(basePath, buildIgnore);
+      copyAllAssets(allAssets);
+      const assetMap = new Map<string, AssetInfo>();
+      for (const a of allAssets) {
+        if (!assetMap.has(a.relPath)) {
+          assetMap.set(a.relPath, a);
+        }
+      }
+      logger.info(`notes-loader: 复制 ${allAssets.length} 个资源文件`);
+
+      // === 阶段 2：逐篇笔记处理（渲染 + 路径替换 + 入库） ===
       const hl = await getHighlighter();
       const md = buildMarked(hl);
-
       let loaded = 0;
       let skipped = 0;
-      const assetState = createAssetCopyState();
 
       for (const filePath of mdFiles) {
         try {
@@ -117,7 +131,9 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           const slug = generateSlug(relPath);
 
           const rawDate = frontmatter['date'];
-          const date = rawDate ? new Date(rawDate as string) : getFileDate(filePath, basePath);
+          const date = rawDate
+            ? new Date(rawDate as string)
+            : (dateMap.get(relPath) ?? statSync(filePath).mtime);
 
           const category =
             (frontmatter['category'] as string | undefined) ?? deriveCategory(relPath);
@@ -127,7 +143,6 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
           const draft = (frontmatter['draft'] as boolean | undefined) ?? false;
 
-          // draft 文章直接跳过，不上 store，避免生成页面路由
           if (draft) {
             skipped++;
             continue;
@@ -136,9 +151,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           const type = (frontmatter['type'] as string | undefined) ?? 'note';
 
           let html = await md.parse(body);
-
-          // 同步资源文件并替换 HTML 中的图片路径
-          html = syncAndReplaceAssets(filePath, category, html, assetState, buildIgnore, basePath);
+          html = replaceAssetPaths(html, filePath, assetMap, basePath);
 
           store.set({
             id: slug,
@@ -293,24 +306,35 @@ function deriveCategory(relPath: string): string {
 }
 
 /**
- * 获取文件日期：优先 git 首次提交时间，fallback 到文件 mtime
+ * 逐文件调用 git log --follow 获取首次提交日期。
+ * --follow 追踪重命名/移动历史，保证日期准确。
+ * 仅依赖 git 命令，macOS / Linux / Windows（Git Bash）均可运行。
+ *
+ * @returns Map<gitRelPath, Date>，git 不可用时返回空 Map
  */
-function getFileDate(filePath: string, basePath: string): Date {
+function buildDateMap(basePath: string): Map<string, Date> {
+  const map = new Map<string, Date>();
   try {
-    const output = execSync(
-      `git log --follow --format=%aI --diff-filter=A -- "${filePath}"`,
-      { cwd: basePath, stdio: ['pipe', 'pipe', 'ignore'], timeout: 5000 }
-    )
-      .toString()
-      .trim();
+    const files = execSync(
+      `git -c core.quotepath=false -C "${basePath}" ls-files -- '*.md'`,
+      { timeout: 5000, stdio: ['pipe', 'pipe', 'ignore'] }
+    ).toString().trim().split('\n').filter(Boolean);
 
-    if (output) {
-      const firstLine = output.split('\n')[0].trim();
-      const d = new Date(firstLine);
-      if (!isNaN(d.getTime())) return d;
+    for (const fileRel of files) {
+      try {
+        const lines = execSync(
+          `git -c core.quotepath=false -C "${basePath}" log --follow --format=%aI --diff-filter=A -- "${fileRel}"`,
+          { timeout: 3000, stdio: ['pipe', 'pipe', 'ignore'] }
+        ).toString().trim().split('\n');
+        const dateStr = lines[lines.length - 1]; // 最后一行 = 最早的提交
+        if (dateStr) {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            map.set(fileRel, d);
+          }
+        }
+      } catch { /* 单个文件 git log 失败，跳过 */ }
     }
-  } catch {
-    // ignore, fallback to mtime
-  }
-  return statSync(filePath).mtime;
+  } catch { /* git 不可用时返回空 Map，fallback 到 mtime */ }
+  return map;
 }
