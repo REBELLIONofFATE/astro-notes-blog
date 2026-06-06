@@ -95,9 +95,9 @@ docker compose up -d
 
 ## 环境变量
 
-本项目 Docker 容器**不依赖环境变量**。
+Docker 容器**不依赖环境变量**。
 
-前端构建所需的 `NOTES_PATH` 在本地 `npm run build` 时通过 `.env` 文件或系统环境变量提供，与 Docker 无关。
+前端构建所需的唯一环境变量 `NOTES_PATH`（笔记仓库路径）在本地 `npm run build` 时通过项目根目录的 `.env` 文件提供，Docker 镜像仅打包已构建的 `dist/` 静态产物，无需在容器中设置任何环境变量。
 
 ## 端口映射
 

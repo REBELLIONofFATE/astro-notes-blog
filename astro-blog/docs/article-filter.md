@@ -4,32 +4,54 @@
 
 ## 目录级过滤：.buildignore
 
-在笔记仓库的任意目录下放置一个空文件 `.buildignore`，该目录及其所有子目录下的 `.md` 文件都不会被构建。
+在笔记仓库的**根目录**（`NOTES_PATH` 对应目录）下放置一个 `.buildignore` 文件，写入匹配规则来控制哪些文件不参与构建。
 
-### 用法
+### 匹配规则
+
+一行一条规则，支持三种格式：
+
+| 格式 | 示例 | 说明 |
+|------|------|------|
+| 目录名 + `/` | `面试题/` | 排除该目录及所有子目录下的文章和资源 |
+| glob 通配符 | `draft-*`、`*.private.md` | 通配符 `*` 匹配任意非 `/` 字符 |
+| 精确文件名 | `README.md` | 排除任意目录下匹配该名称的文件 |
+
+以 `#` 开头的行为注释，空行会被忽略。
+
+> `.buildignore` 文件**仅在根目录生效**，不会递归扫描子目录中的同名文件。
+
+### 示例
+
+```
+# .buildignore（放在笔记仓库根目录）
+面试题/              # 排除 面试题/ 整棵目录树
+draft-*              # 排除所有 draft- 开头的文件
+*.private.md         # 排除所有 .private.md 后缀的文件
+```
 
 ```
 笔记仓库/
-├── Java/                  ← 正常构建
-├── 面试题/                ← 跳过整棵树
-│   └── .buildignore       ← 放一个空文件
+├── .buildignore             ← 放在根目录，这是唯一生效的位置
+├── Java/                    ← 正常构建
+├── 面试题/                  ← 被排除（匹配 面试题/）
 │   ├── 2023/
 │   │   └── 晨考题.md
 │   └── 面试总结.md
-├── 算法/                  ← 构建
+├── draft-outline.md         ← 被排除（匹配 draft-*）
+├── 算法/                    ← 正常构建
 ```
 
 ### 创建方式
 
 ```powershell
 # Windows PowerShell
-New-Item D:\MyProject\my-note\myNote\面试题\.buildignore
+New-Item D:\path\to\notes\.buildignore
 
 # macOS / Linux
-touch /path/to/notes/面试题/.buildignore
+touch /path/to/notes/.buildignore
 ```
 
-> 文件内容为空即可，不需要写任何配置。
+创建后编辑该文件，按需写入匹配规则。
 
 ## 文件级过滤：draft 标记
 
