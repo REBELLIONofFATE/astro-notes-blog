@@ -8,7 +8,8 @@
     "build": "astro build && node scripts/pagefind-build.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "init": "node scripts/init-frontmatter.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.11",
