@@ -24,7 +24,12 @@ const postUrl = url ?? `/posts/${slug}`;
     <div class="card-meta">
       <time class="card-date" datetime={formattedDate}>{formattedDate}</time>
       {category && category !== '未分类' && (
-        <span class="card-category">📁 {category.split('/').at(-1)}</span>
+        <span class="card-category">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  {category.split('/').join(' / ')}
+                </span>
       )}
     </div>
     <p class="card-excerpt">{excerpt}</p>
@@ -86,6 +91,9 @@ const postUrl = url ?? `/posts/${slug}`;
   }
 
   .card-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
     font-size: 0.8rem;
     color: var(--color-accent);
     opacity: 0.85;
