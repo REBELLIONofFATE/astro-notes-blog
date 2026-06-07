@@ -1,0 +1,124 @@
+---
+import type { Heading } from '../utils/headings';
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+---
+
+{headings.length === 0 ? (
+  <Fragment></Fragment>
+) : (
+  <nav class="toc" aria-label="文章目录">
+  <div class="toc-title">目录</div>
+  <ul class="toc-list">
+    {headings.map((h) => (
+      <li class={`toc-item toc-level-${h.level}`}>
+        <a href={`#${h.id}`}>{h.text}</a>
+      </li>
+    ))}
+  </ul>
+  </nav>
+)}
+
+<script>
+  // 滚动高亮当前标题
+  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.toc-item a');
+  const headingIds = Array.from(tocLinks).map((a) => a.getAttribute('href')!.slice(1));
+  const headingElements = headingIds
+    .map((id) => document.getElementById(id))
+    .filter(Boolean) as HTMLElement[];
+
+  if (headingElements.length === 0) {
+    // 如果HTML中没有对应的heading（如posts使用Astro原生渲染），则隐藏TOC
+    const toc = document.querySelector('.toc');
+    if (toc) toc.classList.add('toc-hidden');
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 找到离视口顶部最近的可见标题
+        let activeId: string | null = null;
+        let minTop = Infinity;
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const top = entry.boundingClientRect.top;
+            if (top < minTop) {
+              minTop = top;
+              activeId = entry.target.id;
+            }
+          }
+        }
+        if (activeId) {
+          tocLinks.forEach((a) => {
+            a.classList.toggle('active', a.getAttribute('href') === `#${activeId}`);
+          });
+        }
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+
+    headingElements.forEach((el) => observer.observe(el));
+  }
+</script>
+
+<style>
+  .toc {
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .toc-hidden {
+    display: none;
+  }
+
+  .toc-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+    font-size: 0.9rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 2px solid var(--color-border);
+  }
+
+  .toc-item {
+    padding: 0;
+  }
+
+  .toc-item a {
+    display: block;
+    padding: 0.15rem 0 0.15rem 1rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .toc-item a:hover {
+    color: var(--color-accent);
+  }
+
+  .toc-item a.active {
+    color: var(--color-accent);
+    border-left-color: var(--color-accent);
+    font-weight: 500;
+  }
+
+  .toc-level-3 a {
+    padding-left: 1.8rem;
+    font-size: 0.82rem;
+  }
+
+  .toc-level-4 a {
+    padding-left: 2.6rem;
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary, #999);
+  }
+</style>

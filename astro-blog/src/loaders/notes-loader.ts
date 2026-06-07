@@ -7,6 +7,7 @@ import { Marked, Renderer } from 'marked';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
 import { loadBuildIgnore, scanAllAssets, copyAllAssets, replaceAssetPaths, type AssetInfo } from './asset-copier';
+import { generateId } from '../utils/headings';
 
 // Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
 let _highlighter: Highlighter | null = null;
@@ -42,6 +43,12 @@ function resolveLang(hl: Highlighter, lang: string): string {
 
 function buildMarked(hl: Highlighter): Marked {
   const renderer = new Renderer();
+  renderer.heading = function ({ tokens, depth }: { tokens: any[]; depth: number }): string {
+    const text = this.parser.parseInline(tokens);
+    const plainText = text.replace(/<[^>]+>/g, '').trim();
+    const id = generateId(plainText);
+    return `<h${depth} id="${id}">${text}</h${depth}>\n`;
+  };
   renderer.code = ({ text, lang }) => {
     let resolvedLang: string;
 

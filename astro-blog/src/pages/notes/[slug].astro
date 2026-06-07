@@ -1,7 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
 import { filterPublished } from '../../utils/posts';
+import { extractHeadings } from '../../utils/headings';
 
 export async function getStaticPaths() {
   const allNotes = await getCollection('notes');
@@ -17,12 +19,14 @@ const { Content } = await render(note);
 const formattedDate = note.data.date.toISOString().slice(0, 10);
 const category = note.data.category ?? '未分类';
 const tags = note.data.tags ?? [];
+const headings = extractHeadings(note.body ?? '');
 ---
 
 <BaseLayout title={note.data.title} description={`${note.data.title} - ${category}`}>
-  <article class="prose">
-    <header class="post-header">
-      <div class="post-meta-row">
+  <div class="article-layout">
+    <article class="prose">
+      <header class="post-header">
+        <div class="post-meta-row">
         <a href={`/categories/${category}`} class="meta-category">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -54,12 +58,64 @@ const tags = note.data.tags ?? [];
       <a href="/notes" class="back-link">← 返回笔记列表</a>
     </footer>
   </article>
+
+    <aside class="article-sidebar">
+      <div class="toc-sticky">
+        <TableOfContents headings={headings} />
+      </div>
+    </aside>
+  </div>
 </BaseLayout>
 
 <style>
-  .prose {
+  .article-layout {
     max-width: 720px;
     margin: 0 auto;
+    position: relative;
+  }
+
+  .prose {
+    min-width: 0;
+  }
+
+  .article-sidebar {
+    position: absolute;
+    left: calc(100% + 3rem);
+    top: 0;
+    bottom: 0;
+    width: 200px;
+    pointer-events: none;
+  }
+
+  .article-sidebar > * {
+    pointer-events: auto;
+  }
+
+  .toc-sticky {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+
+  @media (max-width: 1200px) {
+    .article-layout {
+      max-width: 100%;
+    }
+
+    .article-sidebar {
+      position: static;
+      width: 100%;
+      pointer-events: auto;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .toc-sticky {
+      position: static;
+      max-height: none;
+    }
   }
 
   .post-header {
