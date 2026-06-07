@@ -1,5 +1,6 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
 import { notesLoader } from './loaders/notes-loader';
 import { contentSchema } from './frontmatter-schema';
 
@@ -24,6 +25,8 @@ const notes = defineCollection({
   schema: contentSchema.extend({
     // 笔记默认 type 为 'note'
     type: contentSchema.shape.type.default('note'),
+    // frontmatter 中的原始 title（仅当 frontmatter 写了 title 时有值）
+    rawTitle: z.string().optional(),
   }),
 });
 

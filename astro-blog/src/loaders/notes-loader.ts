@@ -130,8 +130,10 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
           const { frontmatter, body } = parseFrontmatter(content);
 
+          const rawTitle = frontmatter['title'] as string | undefined;
+
           const title =
-            (frontmatter['title'] as string | undefined) ??
+            rawTitle ??
             extractTitle(body) ??
             basename(filePath, extname(filePath));
 
@@ -162,7 +164,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
           store.set({
             id: slug,
-            data: { title, slug, date, category, tags, draft, type },
+            data: { title, slug, date, category, tags, draft, type, rawTitle },
             body,
             rendered: {
               html,
