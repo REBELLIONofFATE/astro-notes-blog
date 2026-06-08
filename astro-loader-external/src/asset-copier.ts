@@ -1,5 +1,8 @@
+// asset-copier.ts - 资源管线：扫描、复制、路径替换
+
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, extname, dirname, relative, resolve } from 'node:path';
+import type { AssetInfo } from './types';
 
 // ============================================================
 // 常量 & 工具
@@ -7,12 +10,6 @@ import { join, extname, dirname, relative, resolve } from 'node:path';
 
 /** 不参与复制的文件扩展名 */
 const SKIP_EXTS = new Set(['.md']);
-
-/** 单个资源文件在 vault 下的描述 */
-export interface AssetInfo {
-  absPath: string;
-  relPath: string;
-}
 
 /** 转义正则特殊字符 */
 export function escapeRegExp(s: string): string {
@@ -83,36 +80,28 @@ export function scanAllAssets(
 }
 
 // ============================================================
-// 状态导出
-// ============================================================
-
-/** @deprecated 资源复制状态（按目标路径和源文件去重）。Task 3 后不再需要，保留以兼容旧引用。 */
-export interface AssetCopyState {
-  copiedDestinations: Set<string>;
-  copiedSources: Set<string>;
-}
-
-export function createAssetCopyState(): AssetCopyState {
-  return { copiedDestinations: new Set(), copiedSources: new Set() };
-}
-
-// ============================================================
 // 资源管线
 // ============================================================
 
 /**
- * 将已扫描的全部资源复制到 public/notes-assets/ 下。
+ * 将已扫描的全部资源复制到 public/{assetsPrefix}/ 下。
  * 按 absPath 去重（每个物理文件只复制一次）。
+ *
+ * @param allAssets    已扫描的全部资源
+ * @param assetsPrefix 资源 URL 前缀，如 '/notes-assets'
+ * @param publicDir    项目 public/ 目录，默认 process.cwd()/public
  */
 export function copyAllAssets(
   allAssets: AssetInfo[],
+  assetsPrefix: string,
   publicDir: string = join(process.cwd(), 'public'),
 ): void {
+  const assetsDir = assetsPrefix.replace(/^\//, '');
   const copied = new Set<string>();
   for (const { absPath, relPath } of allAssets) {
     if (copied.has(absPath)) continue;
     copied.add(absPath);
-    const dest = join(publicDir, 'notes-assets', relPath);
+    const dest = join(publicDir, assetsDir, relPath);
     mkdirSync(dirname(dest), { recursive: true });
     cpSync(absPath, dest);
   }
@@ -126,6 +115,7 @@ export function copyAllAssets(
  * @param noteFilePath  笔记 .md 文件绝对路径（用于解析相对引用）
  * @param assetMap      vaultRelPath → AssetInfo 的查找表
  * @param vaultRoot     vault 根目录
+ * @param assetsPrefix  资源 URL 前缀，如 '/notes-assets'
  * @returns 替换后的 HTML
  */
 export function replaceAssetPaths(
@@ -133,6 +123,7 @@ export function replaceAssetPaths(
   noteFilePath: string,
   assetMap: Map<string, AssetInfo>,
   vaultRoot: string,
+  assetsPrefix: string,
 ): string {
   const mdDir = dirname(noteFilePath);
 
@@ -154,7 +145,7 @@ export function replaceAssetPaths(
       const asset = assetMap.get(vaultRelPath);
       if (asset) {
         const encoded = encodeURI(asset.relPath);
-        return `${attr}="/notes-assets/${encoded}"`;
+        return `${attr}="${assetsPrefix}/${encoded}"`;
       }
     }
 

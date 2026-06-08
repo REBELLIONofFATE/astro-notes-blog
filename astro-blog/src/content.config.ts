@@ -1,8 +1,9 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { notesLoader } from './loaders/notes-loader';
+import { notesLoader } from 'astro-loader-external';
 import { contentSchema } from './frontmatter-schema';
+import { ROUTE_PREFIX, ASSETS_PREFIX } from './config';
 
 /** 博文集合：手动维护，存放在 src/content/posts/ */
 const posts = defineCollection({
@@ -21,6 +22,8 @@ const notes = defineCollection({
   loader: notesLoader({
     basePath: NOTES_PATH,
     excludeDirs: ['.git', '.idea', '文档'],
+    routePrefix: ROUTE_PREFIX,
+    assetsPrefix: ASSETS_PREFIX,
   }),
   schema: contentSchema.extend({
     // 笔记默认 type 为 'note'

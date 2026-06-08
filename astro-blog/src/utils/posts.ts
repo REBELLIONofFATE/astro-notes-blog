@@ -1,3 +1,5 @@
+import { ROUTE_PREFIX } from '../config';
+
 // posts.ts - 文章相关工具函数
 // Requirements: 1.3, 2.1, 2.3
 
@@ -78,5 +80,5 @@ export function getPostUrl(slug: string): string {
 
 /** 生成笔记 URL 路径 */
 export function getNoteUrl(slug: string): string {
-  return `/notes/${slug}`;
+  return `${ROUTE_PREFIX}/${slug}`;
 }

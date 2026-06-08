@@ -1,3 +1,5 @@
+// loader.ts - 核心 loader：从外部目录加载 Markdown 笔记
+
 import type { Loader } from 'astro/loaders';
 import { readFileSync, rmSync, statSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -6,10 +8,26 @@ import { execSync } from 'node:child_process';
 import { Marked, Renderer } from 'marked';
 import { createHighlighter, bundledLanguages, type Highlighter } from 'shiki';
 import hljs from 'highlight.js';
-import { loadBuildIgnore, scanAllAssets, copyAllAssets, replaceAssetPaths, type AssetInfo } from './asset-copier';
-import { generateId } from '../utils/headings';
+import { loadBuildIgnore, scanAllAssets, copyAllAssets, replaceAssetPaths } from './asset-copier';
+import type { NotesLoaderOptions, AssetInfo } from './types';
 
-// Shiki highlighter 单例，主题与 astro.config.mjs 保持一致（github-dark）
+// ============================================================
+// 标题 ID 生成（与 marked renderer 保持一致）
+// ============================================================
+
+/** 从纯文本生成 URL 安全的 slug */
+function generateId(text: string): string {
+  return text
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\u4e00-\u9fff\-]/g, '')
+    .toLowerCase();
+}
+
+// ============================================================
+// 代码高亮引擎
+// ============================================================
+
+// Shiki highlighter 单例
 let _highlighter: Highlighter | null = null;
 
 async function getHighlighter(): Promise<Highlighter> {
@@ -70,15 +88,17 @@ function buildMarked(hl: Highlighter): Marked {
   return new Marked({ renderer });
 }
 
-export interface NotesLoaderOptions {
-  /** 笔记仓库根目录的绝对路径。不设置时跳过笔记加载 */
-  basePath?: string;
-  /** 需要排除的目录名（精确匹配），默认排除 .git、.idea、文档 */
-  excludeDirs?: string[];
-}
+// ============================================================
+// 主入口
+// ============================================================
 
 export function notesLoader(options: NotesLoaderOptions): Loader {
-  const { basePath, excludeDirs = ['.git', '.idea', '文档'] } = options;
+  const {
+    basePath,
+    excludeDirs = ['.git', '.idea', '文档'],
+    routePrefix = '/notes',
+    assetsPrefix = '/notes-assets',
+  } = options;
 
   if (!basePath) {
     return {
@@ -95,7 +115,8 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
       store.clear();
 
       // 清理上次构建的资源产物，避免残留文件
-      const notesAssetsDir = join(process.cwd(), 'public', 'notes-assets');
+      const assetsDir = assetsPrefix.replace(/^\//, '');
+      const notesAssetsDir = join(process.cwd(), 'public', assetsDir);
       rmSync(notesAssetsDir, { recursive: true, force: true });
 
       const buildIgnore = loadBuildIgnore(basePath);
@@ -108,7 +129,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
 
       // === 阶段 1：全局资源扫描与复制 ===
       const allAssets = scanAllAssets(basePath, buildIgnore);
-      copyAllAssets(allAssets);
+      copyAllAssets(allAssets, assetsPrefix);
       const assetMap = new Map<string, AssetInfo>();
       for (const a of allAssets) {
         if (!assetMap.has(a.relPath)) {
@@ -160,7 +181,7 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
           const type = (frontmatter['type'] as string | undefined) ?? 'note';
 
           let html = await md.parse(body);
-          html = replaceAssetPaths(html, filePath, assetMap, basePath);
+          html = replaceAssetPaths(html, filePath, assetMap, basePath, assetsPrefix);
 
           store.set({
             id: slug,
@@ -183,6 +204,10 @@ export function notesLoader(options: NotesLoaderOptions): Loader {
     },
   };
 }
+
+// ============================================================
+// 内部工具函数
+// ============================================================
 
 /** 递归收集目录下所有 .md 文件，自动排除隐藏目录和 excludeDirs */
 async function collectMdFiles(
