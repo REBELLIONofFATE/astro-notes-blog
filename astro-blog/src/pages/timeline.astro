@@ -1,0 +1,322 @@
+---
+// timeline.astro - 时间线（全部内容按年/月分组）
+import { getCollection } from "astro:content";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import { filterPublished, sortByDateDesc, extractExcerpt, getNoteUrl, getPostUrl } from "../utils/posts";
+import "../styles/global.css";
+
+const [allPosts, allNotes] = await Promise.all([
+  getCollection("posts"),
+  getCollection("notes"),
+]);
+
+const allContent = sortByDateDesc(
+  filterPublished([...allPosts, ...allNotes])
+);
+
+// 按年月分组: { "2026-06": [...], "2026-01": [...], ... }
+interface MonthGroup {
+  yearMonth: string;
+  label: string;
+  count: number;
+  items: typeof allContent;
+}
+
+const groups: MonthGroup[] = [];
+let currentKey = "";
+let currentGroup: MonthGroup | null = null;
+
+for (const item of allContent) {
+  const d = new Date(item.data.date);
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const label = `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, "0")}月`;
+
+  if (key !== currentKey) {
+    currentKey = key;
+    currentGroup = { yearMonth: key, label, count: 0, items: [] };
+    groups.push(currentGroup);
+  }
+  currentGroup!.items.push(item);
+  currentGroup!.count++;
+}
+
+// 年份列表用于锚点导航
+const years = [...new Set(groups.map((g) => g.yearMonth.slice(0, 4)))];
+
+function getItemUrl(item: { data: { slug: string; type?: string } }): string {
+  return item.data.type === "note" ? getNoteUrl(item.data.slug) : getPostUrl(item.data.slug);
+}
+
+// 日期 → MM-DD 短格式
+function fmtDate(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${m}-${day}`;
+}
+
+// 日期 → YYYY-MM-DD ISO 格式
+function fmtISO(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>时间线</title>
+    <meta name="description" content="按时间排序浏览全部内容" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@700;900&family=LXGW+WenKai:wght@400&family=Caveat:wght@700&display=swap" rel="stylesheet" />
+    <script is:inline>
+      (function () {
+        var theme;
+        try { theme = localStorage.getItem("theme"); } catch (e) {}
+        if (theme !== "dark" && theme !== "light") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <Navbar />
+
+    <main class="container main-content">
+      <div class="timeline-header">
+        <h1 class="timeline-title">时间线</h1>
+        <p class="timeline-desc">共 {allContent.length} 篇，按更新时间排序</p>
+
+        <!-- 年份锚点 -->
+        {years.length > 1 && (
+          <nav class="year-nav">
+            {years.map((year) => (
+              <a href={`#year-${year}`} class="year-pill">{year}</a>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      <!-- 时间线主干 -->
+      <div class="timeline">
+        {groups.map((group) => (
+          <section class="timeline-month" id={`year-${group.yearMonth.slice(0, 4)}`}>
+            <div class="month-header">
+              <span class="month-label">{group.label}</span>
+              <span class="month-count">{group.count} 篇</span>
+            </div>
+            <div class="month-items">
+              {group.items.map((item) => (
+                <a href={getItemUrl(item)} class="timeline-item">
+                  <time class="item-date" datetime={fmtISO(item.data.date)}>
+                    {fmtDate(item.data.date)}
+                  </time>
+                  <span class="item-title">{item.data.title}</span>
+                  {item.data.category && (
+                    <span class="item-category">{item.data.category}</span>
+                  )}
+                </a>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </main>
+
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .main-content {
+    min-height: calc(100vh - 64px - 120px);
+    padding-top: 2.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .timeline-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .timeline-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .timeline-desc {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 1.25rem;
+  }
+
+  /* 年份锚点导航 */
+  .year-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .year-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .year-pill:hover {
+    background-color: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  /* 时间线 */
+  .timeline {
+    position: relative;
+  }
+
+  /* 左侧竖线 */
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 108px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-border);
+  }
+
+  .timeline-month {
+    position: relative;
+    margin-bottom: 2.5rem;
+    padding-left: 140px;
+  }
+
+  .month-header {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* 圆点 */
+  .month-header::before {
+    content: "";
+    position: absolute;
+    left: -35px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--color-accent);
+    border: 2px solid var(--color-bg);
+    z-index: 1;
+  }
+
+  .month-label {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .month-count {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+
+  .month-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background-color 0.15s ease;
+  }
+
+  .timeline-item:hover {
+    background-color: var(--color-bg-card);
+    text-decoration: none;
+  }
+
+  .item-date {
+    flex-shrink: 0;
+    width: 52px;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  .item-title {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .timeline-item:hover .item-title {
+    color: var(--color-accent);
+  }
+
+  .item-category {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+    background-color: var(--color-border);
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .timeline::before {
+      left: 18px;
+    }
+
+    .timeline-month {
+      padding-left: 48px;
+    }
+
+    .month-header::before {
+      left: -34px;
+    }
+
+    .timeline-item {
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .item-date {
+      width: auto;
+      font-size: 0.75rem;
+    }
+
+    .item-title {
+      white-space: normal;
+    }
+  }
+</style>
