@@ -7,7 +7,7 @@
 :root,
 html[data-theme="light"] {
   --color-bg: #ffffff;
-  --color-bg-card: #f9fafb;
+  --color-bg-card: #fdfdfd;
   --color-text: #1b1c1d;
   --color-text-secondary: #767676;
   --color-accent: #2185d0;
@@ -22,7 +22,7 @@ html[data-theme="light"] {
 /* --- 暗色模式 参考 Semantic UI 深色风格 --- */
 html[data-theme="dark"] {
   --color-bg: #1b1c1d;
-  --color-bg-card: #27292a;
+  --color-bg-card: #1e1f20;
   --color-text: #e8e8e8;
   --color-text-secondary: #9a9a9a;
   --color-accent: #54c8ff;
@@ -214,8 +214,7 @@ pre code {
 }
 
 .card:hover {
-  box-shadow: 0 4px 16px var(--color-shadow);
-  transform: translateY(-2px);
+  box-shadow: 0 1px 4px var(--color-shadow);
 }
 
 /* ============================================
