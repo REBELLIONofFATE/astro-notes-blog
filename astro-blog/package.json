@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest --run",
-    "init": "node scripts/init-frontmatter.mjs"
+    "init": "node scripts/init-frontmatter.mjs",
+    "detect-lang": "node scripts/detect-code-lang.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.11",
