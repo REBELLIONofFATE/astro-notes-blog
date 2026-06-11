@@ -9,6 +9,4 @@ astro-blog/node_modules/
 astro-blog/dist/
 astro-blog/.astro/
 
-# astro-loader-external
-astro-loader-external/node_modules/
 node_modules
